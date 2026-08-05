@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — MMMUT Attendance</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --ink:#152A3B;
+  --ink-soft:#2C4258;
+  --paper:#EDEAE0;
+  --paper-raised:#F7F5EE;
+  --paper-line:#D9D4C4;
+  --brass:#B08A3E;
+  --brass-soft:#E4D2A4;
+  --teal:#2F5D5A;
+  --teal-soft:#DCE9E6;
+  --brick:#A3402E;
+  --brick-soft:#F2DCD6;
+  --moss:#4C7A47;
+  --moss-soft:#DCE8D6;
+  --shadow: 0 1px 2px rgba(21,42,59,.06), 0 8px 24px rgba(21,42,59,.08);
+  --radius: 14px;
+  font-size: 16px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(21,42,59,.045) 1px, transparent 0);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+}
+::selection{ background: var(--brass-soft); }
+h1,h2,h3,.display{
+  font-family:'Fraunces', serif;
+  font-weight:600;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+  margin:0;
+}
+.mono{ font-family:'IBM Plex Mono', monospace; }
+button{ font-family:inherit; cursor:pointer; }
+input,select{ font-family:inherit; }
+a{ color: inherit; }
+
+/* ---------- Loading ---------- */
+#loadingScreen{
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+  background:var(--paper); z-index:999;
+}
+.loader-ring{ width:34px;height:34px;border-radius:50%; border:3px solid var(--paper-line); border-top-color:var(--brass); animation:spin 0.9s linear infinite;}
+@keyframes spin{ to{ transform:rotate(360deg);} }
+.loading-msg{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft); letter-spacing:.02em;}
+
+/* ---------- Auth ---------- */
+#authScreen{
+  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px 16px;
+}
+.auth-wrap{
+  width:100%; max-width:920px; display:grid; grid-template-columns:1.05fr 1fr; background:var(--paper-raised);
+  border-radius: 20px; box-shadow: var(--shadow); overflow:hidden; border:1px solid var(--paper-line);
+}
+.auth-side{
+  background: linear-gradient(165deg, var(--ink) 0%, #1E3A50 60%, #234459 100%);
+  color: #F1ECDD; padding:44px 38px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;
+}
+.auth-side::after{
+  content:""; position:absolute; right:-60px; bottom:-60px; width:220px;height:220px; border-radius:50%;
+  border:1px solid rgba(241,236,221,.18);
+}
+.auth-side::before{
+  content:""; position:absolute; right:-10px; bottom:-10px; width:150px;height:150px; border-radius:50%;
+  border:1px solid rgba(241,236,221,.14);
+}
+.auth-mark{ font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--brass-soft); }
+.auth-title{ font-size:38px; line-height:1.08; margin-top:18px; }
+.auth-title em{ font-style:italic; color:var(--brass-soft); }
+.auth-sub{ margin-top:14px; font-size:14.5px; line-height:1.55; color:#CBD6DD; max-width:34ch; }
+.period-strip{ display:flex; gap:6px; margin-top:28px; position:relative; z-index:1; }
+.period-chip{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; width:26px;height:26px; border-radius:50%; display:flex; align-items:center;justify-content:center; border:1px solid rgba(241,236,221,.35); color:#E8E2CE;}
+.auth-foot{ font-size:11.5px; color:#93A5AF; position:relative; z-index:1;}
+
+.auth-main{ padding:40px 38px; display:flex; flex-direction:column; }
+.auth-tabs{ display:flex; gap:4px; background:var(--paper); border-radius:999px; padding:4px; margin-bottom:26px; width:fit-content; }
+.auth-tab{ border:none; background:transparent; padding:8px 18px; border-radius:999px; font-size:13.5px; font-weight:600; color:var(--ink-soft); }
+.auth-tab.active{ background:var(--ink); color:#F1ECDD; }
+.field{ margin-bottom:15px; }
+.field label{ display:block; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-bottom:6px; }
+.field input, .field select{
+  width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--paper-line); background:#fff;
+  font-size:14.5px; color:var(--ink); outline:none; transition:border-color .15s;
+}
+.field input:focus, .field select:focus{ border-color:var(--brass); }
+.field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.btn-primary{
+  margin-top:8px; width:100%; padding:13px; border-radius:10px; border:none; background:var(--ink); color:#F1ECDD;
+  font-weight:600; font-size:14.5px; letter-spacing:.01em; transition:background .15s, transform .1s;
+}
+.btn-primary:hover{ background:#1E3A50; }
+.btn-primary:active{ transform: scale(.99); }
+.auth-error{ margin-top:12px; font-size:13px; color:var(--brick); background:var(--brick-soft); padding:9px 12px; border-radius:8px; display:none; }
+.auth-hint{ margin-top:16px; font-size:11.5px; color:#8B8676; line-height:1.5; }
+
+/* ---------- App shell ---------- */
+#app{ display:none; min-height:100vh; }
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; padding:18px 28px; border-bottom:1px solid var(--paper-line);
+  background:var(--paper-raised); position:sticky; top:0; z-index:10;
+}
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand-mark{ width:34px;height:34px;border-radius:9px; background:var(--ink); display:flex; align-items:center; justify-content:center; color:var(--brass-soft); font-family:'Fraunces',serif; font-weight:700; }
+.brand-name{ font-family:'Fraunces',serif; font-weight:600; font-size:17px; }
+.brand-sub{ font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; letter-spacing:.04em;}
+.topbar-right{ display:flex; align-items:center; gap:14px; }
+.user-pill{ display:flex; align-items:center; gap:8px; background:var(--paper); border-radius:999px; padding:6px 6px 6px 14px; }
+.user-pill-name{ font-size:13px; font-weight:600; }
+.user-pill-branch{ font-size:11px; color:var(--ink-soft); }
+.avatar{ width:28px;height:28px; border-radius:50%; background:var(--brass); color:#fff; display:flex; align-items:center;justify-content:center; font-size:12px; font-weight:700; font-family:'IBM Plex Mono',monospace;}
+.btn-ghost{ border:1px solid var(--paper-line); background:transparent; padding:8px 14px; border-radius:999px; font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+.btn-ghost:hover{ border-color:var(--ink-soft); color:var(--ink); }
+
+.shell{ max-width:1180px; margin:0 auto; padding:28px; display:grid; grid-template-columns: 1.5fr 1fr; gap:22px; }
+@media (max-width: 920px){ .shell{ grid-template-columns:1fr; padding:16px; } }
+
+.card{ background:var(--paper-raised); border:1px solid var(--paper-line); border-radius: var(--radius); padding:22px; box-shadow: var(--shadow); }
+.card + .card{ margin-top:22px; }
+.card-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; }
+.card-eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass); margin-bottom:4px; }
+.card-title{ font-size:20px; }
+.tabbar{ display:flex; gap:6px; }
+.tab-btn{ border:none; background:var(--paper); padding:6px 13px; border-radius:8px; font-size:12px; font-weight:600; color:var(--ink-soft); }
+.tab-btn.active{ background:var(--ink); color:#F1ECDD; }
+
+/* Period rail — signature element */
+.rail{ position:relative; padding-left:34px; }
+.rail::before{ content:""; position:absolute; left:12px; top:6px; bottom:6px; width:1px; background:var(--paper-line); }
+.rail-item{ position:relative; padding-bottom:16px; }
+.rail-item:last-child{ padding-bottom:0; }
+.rail-dot{
+  position:absolute; left:-34px; top:2px; width:24px;height:24px; border-radius:50%; background:var(--paper);
+  border:1.5px solid var(--paper-line); display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; color:var(--ink-soft);
+}
+.rail-item.now .rail-dot{ background:var(--brass); border-color:var(--brass); color:#fff; box-shadow:0 0 0 4px var(--brass-soft); }
+.rail-item.done .rail-dot{ background:var(--ink); border-color:var(--ink); color:#F1ECDD; }
+.rail-item.lunch .rail-dot{ opacity:.5; }
+.rail-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border-radius:10px; padding:10px 13px; }
+.rail-item.now .rail-row{ background: var(--brass-soft); }
+.rail-item.lunch .rail-row{ background:transparent; padding:4px 13px; }
+.rail-subject{ font-size:13.5px; font-weight:600; }
+.rail-meta{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+.rail-time{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); white-space:nowrap; }
+.rail-actions{ display:flex; gap:5px; }
+.mini-btn{ border:1px solid var(--paper-line); background:#fff; width:26px;height:26px; border-radius:7px; font-size:13px; display:flex;align-items:center;justify-content:center; }
+.mini-btn.present.active{ background:var(--moss); border-color:var(--moss); color:#fff; }
+.mini-btn.absent.active{ background:var(--brick); border-color:var(--brick); color:#fff; }
+.status-tag{ font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:999px; font-weight:600; }
+.status-tag.present{ background:var(--moss-soft); color:var(--moss); }
+.status-tag.absent{ background:var(--brick-soft); color:var(--brick); }
+
+/* Stats */
+.stat-row{ display:flex; align-items:center; gap:12px; margin-bottom:13px; }
+.stat-row:last-child{ margin-bottom:0; }
+.stat-label{ width:150px; font-size:12.5px; font-weight:600; flex-shrink:0; }
+.stat-bar-track{ flex:1; height:8px; background:var(--paper); border-radius:999px; overflow:hidden; }
+.stat-bar-fill{ height:100%; border-radius:999px; background:var(--teal); transition:width .4s ease; }
+.stat-bar-fill.warn{ background:var(--brass); }
+.stat-bar-fill.danger{ background:var(--brick); }
+.stat-pct{ width:42px; text-align:right; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; flex-shrink:0; }
+
+.overall-ring-wrap{ display:flex; align-items:center; gap:18px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px dashed var(--paper-line); }
+.overall-num{ font-family:'Fraunces',serif; font-size:40px; font-weight:600; }
+.overall-sub{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+
+.leave-line{ font-size:11px; margin-top:3px; font-family:'IBM Plex Mono',monospace; }
+.leave-line.ok{ color:var(--moss); }
+.leave-line.warn{ color:var(--brick); }
+.leave-line.neutral{ color:var(--ink-soft); }
+.overall-leave{ margin-top:10px; padding:11px 13px; border-radius:10px; background:var(--paper); font-size:12.5px; line-height:1.5; }
+.overall-leave b{ font-family:'IBM Plex Mono',monospace; }
+.target-row{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+.target-row label{ font-size:11px; color:var(--ink-soft); font-weight:600; }
+.target-row select{ padding:5px 8px; border-radius:7px; border:1px solid var(--paper-line); background:#fff; font-size:12px; }
+
+/* Events */
+.event-item{ display:flex; gap:13px; padding:12px 0; border-bottom:1px solid var(--paper-line); }
+.event-item:last-child{ border-bottom:none; padding-bottom:0; }
+.event-date{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#fff; background:var(--ink); border-radius:8px; padding:7px 6px; text-align:center; width:52px; flex-shrink:0; line-height:1.25; }
+.event-date .d{ font-size:15px; font-weight:700; display:block; }
+.event-title{ font-size:13.5px; font-weight:600; line-height:1.35; }
+.event-range{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+.event-badge{ display:inline-block; margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; padding:2px 7px; border-radius:999px; background:var(--teal-soft); color:var(--teal); }
+.event-badge.today{ background:var(--brass-soft); color:#8a6a26; }
+
+.week-grid{ display:grid; grid-template-columns:44px repeat(5, 1fr); gap:4px; font-size:10.5px; }
+.week-grid .wh{ font-family:'IBM Plex Mono',monospace; font-size:10px; text-align:center; color:var(--ink-soft); padding:4px 0; font-weight:600;}
+.week-cell{ background:var(--paper); border-radius:6px; padding:5px 4px; min-height:38px; display:flex; flex-direction:column; justify-content:center; }
+.week-cell.p{ background:var(--teal-soft); }
+.week-cell.lec{ background:var(--paper); }
+.week-cell .wc-code{ font-weight:700; font-size:9.5px; }
+.week-cell .wc-type{ font-size:8px; color:var(--ink-soft); }
+.week-per{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; }
+
+.empty-note{ font-size:12.5px; color:var(--ink-soft); font-style:italic; }
+.legend-dot{ width:8px;height:8px;border-radius:50%; display:inline-block; margin-right:5px;}
+footer.app-foot{ text-align:center; padding:24px; font-size:11px; color:#8B8676; font-family:'IBM Plex Mono',monospace; }
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div class="loader-ring"></div>
+  <div class="loading-msg" id="loadingMsg">Opening the attendance ledger…</div>
+</div>
+
+<!-- ================= AUTH ================= -->
+<div id="authScreen" style="display:none;">
+  <div class="auth-wrap">
+    <div class="auth-side">
+      <div>
+        <div class="auth-mark">MMMUT · Gorakhpur</div>
+        <div class="auth-title display">The <em>Ledger.</em><br>Your semester,<br>period by period.</div>
+        <div class="auth-sub">Sign in to see today's timetable, mark attendance as it happens, and track where every subject stands before the next minor test.</div>
+        <div class="period-strip">
+          <div class="period-chip">I</div><div class="period-chip">II</div><div class="period-chip">III</div>
+          <div class="period-chip">IV</div><div class="period-chip">V</div><div class="period-chip">VI</div>
+          <div class="period-chip">VII</div><div class="period-chip">VIII</div>
+        </div>
+      </div>
+      <div class="auth-foot">Session 2026–27 · First Year B.Tech / BBA / B.Pharm</div>
+    </div>
+    <div class="auth-main">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log in</button>
+        <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign up</button>
+      </div>
+
+      <div id="loginForm">
+        <div class="field"><label>Username</label><input id="loginUsername" placeholder="e.g. rahul.cse26" autocomplete="username"></div>
+        <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="btn-primary" onclick="handleLogin()">Log in</button>
+        <div class="auth-error" id="loginError"></div>
+      </div>
+
+      <div id="signupForm" style="display:none;">
+        <div class="field"><label>Full name</label><input id="suName" placeholder="Rahul Kumar"></div>
+        <div class="field-row">
+          <div class="field"><label>Username</label><input id="suUsername" placeholder="rahul.cse26"></div>
+          <div class="field"><label>Password</label><input id="suPassword" type="password" placeholder="••••••••"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Branch</label>
+            <select id="suBranch" onchange="populateSectionOptions()"></select>
+          </div>
+          <div class="field"><label>Section</label>
+            <select id="suSection"></select>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="handleSignup()">Create account</button>
+        <div class="auth-error" id="signupError"></div>
+        <div class="auth-hint">This is a student-built tracker — data is stored so classmates using this same link can also log in. Please don't reuse a sensitive password.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div>
+        <div class="brand-name">The Ledger</div>
+        <div class="brand-sub" id="todayLabel">—</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-pill">
+        <div>
+          <div class="user-pill-name" id="pillName">—</div>
+          <div class="user-pill-branch" id="pillBranch">—</div>
+        </div>
+        <div class="avatar" id="pillAvatar">—</div>
+      </div>
+      <button class="btn-ghost" onclick="handleLogout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <!-- LEFT COLUMN -->
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-eyebrow">Bell schedule</div>
+            <div class="card-title display">Today's periods</div>
+          </div>
+          <div class="tabbar">
+            <button class="tab-btn active" id="tabToday" onclick="setScheduleView('today')">Today</button>
+            <button class="tab-btn" id="tabWeek" onclick="setScheduleView('week')">Full week</button>
+            <button class="tab-btn" id="tabImage" onclick="setScheduleView('image')">Image</button>
+          </div>
+        </div>
+        <div id="todayView"></div>
+        <div id="weekView" style="display:none;"></div>
+        <div id="imageView" style="display:none;">
+          <div style="overflow-x:auto; border-radius:10px; border:1px solid var(--paper-line);">
+            <canvas id="ttCanvas"></canvas>
+          </div>
+          <button class="btn-primary" style="margin-top:14px;" onclick="downloadTimetableImage()">Download PNG</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <div class="card">
+        <div class="card-eyebrow">Semester so far</div>
+        <div class="card-title display" style="margin-bottom:16px;">Attendance</div>
+        <div class="target-row">
+          <label>Target attendance</label>
+          <select id="targetPct" onchange="renderAttendanceStats()">
+            <option value="75" selected>75%</option>
+            <option value="80">80%</option>
+            <option value="90">90%</option>
+          </select>
+        </div>
+        <div class="overall-ring-wrap">
+          <div>
+            <div class="overall-num" id="overallPct">—</div>
+            <div class="overall-sub">overall, this semester</div>
+          </div>
+          <div style="font-size:12px;color:var(--ink-soft);line-height:1.6;" id="overallCounts">—</div>
+        </div>
+        <div class="overall-leave" id="overallLeave"></div>
+        <div id="subjectStats"></div>
+      </div>
+
+      
+<div class="card">
+    <div class="card-eyebrow">Quick Resources</div>
+    <div class="card-title display" style="margin-bottom:16px;">MMMUT Links</div>
+
+    <button class="btn-primary" onclick="window.open('https://drive.google.com/file/d/1mHw1emQ9i92HIoq7jw6YWKGpPnFV7wMO/view?usp=drivesdk','_blank')">📅 Time Table PDF</button>
+
+    <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://share.google/uOrpx8BFFizpBu9C2','_blank')">📢 MMMUT Notices</button>
+
+    <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://drive.google.com/file/d/1vENgYXFOKl-1O6eAALAfBYHR95a8b8EX/view?usp=drivesdk','_blank')">📖 Academic Calendar</button>
+</div>
+
+
+      <div class="card">
+        <div class="card-eyebrow">Academic calendar 2026–27</div>
+        <div class="card-title display" style="margin-bottom:14px;">Upcoming</div>
+        <div id="eventsList"></div>
+      </div>
+    </div>
+  </div>
+  <footer class="app-foot">M.M.M. University of Technology, Gorakhpur — Session 2026–27</footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  collection
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMLvLIZkPF05nsVQBr2IA-8BRB5Hzb3Xo",
+  authDomain: "student-erp-77605.firebaseapp.com",
+  projectId: "student-erp-77605",
+  storageBucket: "student-erp-77605.firebasestorage.app",
+  messagingSenderId: "734576815247",
+  appId: "1:734576815247:web:70afe502f427337cbad4fa",
+  measurementId: "G-N8F1GHBW55"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+const usersCollection = collection(db, "users");
+const attendanceCollection = collection(db, "attendance");
+
+/* ============================================================
+   DATA
+   ============================================================ */
+const PERIODS = [
+  {key:'I',   start:'09:10', end:'10:00', label:'I'},
+  {key:'II',  start:'10:00', end:'10:50', label:'II'},
+  {key:'III', start:'10:50', end:'11:40', label:'III'},
+  {key:'IV',  start:'11:40', end:'12:30', label:'IV'},
+  {key:'LUNCH', start:'12:30', end:'14:10', label:'Lunch'},
+  {key:'V',   start:'14:10', end:'15:00', label:'V'},
+  {key:'VI',  start:'15:00', end:'15:50', label:'VI'},
+  {key:'VII', start:'15:50', end:'16:40', label:'VII'},
+  {key:'VIII',start:'16:40', end:'17:30', label:'VIII'},
+];
+const TEACH_PERIODS = PERIODS.filter(p=>p.key!=='LUNCH');
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+const DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri'];
+
+const BRANCHES = [
+  { id:'civil', name:'B.Tech — Civil Engineering', sections:['A','B'], room:'TL-206',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-131', name:'Engineering Physics', ltp:[3,0,2]},
+      {code:'BIT-103', name:'Programming in C', ltp:[3,0,2]},
+      {code:'BCE-121', name:'Engineering Graphics', ltp:[2,0,4]},
+      {code:'BHS-101', name:'Universal Human Values', ltp:[3,1,0]},
+    ]},
+  { id:'cse', name:'B.Tech — Computer Sc. & Engineering', sections:['A','B','C','D'], room:'TL-109 / TL-201',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-131', name:'Engineering Physics', ltp:[3,0,2]},
+      {code:'BCS-110', name:'Introduction to C Programming', ltp:[3,0,2]},
+      {code:'BCS-111', name:'Web Designing-1', ltp:[2,0,4]},
+      {code:'BHS-101', name:'Universal Human Values', ltp:[3,1,0]},
+    ]},
+  { id:'it', name:'B.Tech — Information Technology', sections:['A','B'], room:'TL-203',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-131', name:'Engineering Physics', ltp:[3,0,2]},
+      {code:'BIT-103', name:'Programming in C', ltp:[3,0,2]},
+      {code:'BIT-104', name:'Internet and Web Designing', ltp:[2,0,4]},
+      {code:'BHS-101', name:'Universal Human Values', ltp:[3,1,0]},
+    ]},
+  { id:'chemical', name:'B.Tech — Chemical Engineering', sections:['A'], room:'TL-110',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-131', name:'Engineering Physics', ltp:[3,0,2]},
+      {code:'BIT-103', name:'Programming in C', ltp:[3,0,2]},
+      {code:'BME-104', name:'Manufacturing Techniques Workshop', ltp:[2,0,4]},
+      {code:'BHS-101', name:'Universal Human Values', ltp:[3,1,0]},
+    ]},
+  { id:'ee', name:'B.Tech — Electrical Engineering', sections:['A','B'], room:'TL-202',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-140', name:'Environmental Science & Green Chemistry', ltp:[3,0,2]},
+      {code:'BEE-110', name:'Basic Electrical Engineering', ltp:[3,0,2]},
+      {code:'BEE-108A', name:'Electrical Wiring & Estimation', ltp:[3,0,2]},
+      {code:'BHS-102', name:'Technical Writing & Professional Communication', ltp:[2,1,2]},
+    ]},
+  { id:'me', name:'B.Tech — Mechanical Engineering', sections:['A','B'], room:'TL-205',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-140', name:'Environmental Science & Green Chemistry', ltp:[3,0,2]},
+      {code:'BEE-110', name:'Basic Electrical Engineering', ltp:[3,0,2]},
+      {code:'BME-104', name:'Manufacturing Practice Workshop', ltp:[2,0,4]},
+      {code:'BHS-102', name:'Technical Writing & Professional Communication', ltp:[2,1,2]},
+    ]},
+  { id:'ece', name:'B.Tech — Electronics & Comm. Engineering', sections:['A','B','C'], room:'TL-207 / TL-204',
+    subjects:[
+      {code:'BSM-110', name:'Engineering Mathematics I', ltp:[3,1,0]},
+      {code:'BSM-140', name:'Environmental Science & Green Chemistry', ltp:[3,0,2]},
+      {code:'BEE-110', name:'Basic Electrical Engineering', ltp:[3,0,2]},
+      {code:'BEC-106', name:'Electronic Components Testing & Measurement', ltp:[2,0,4]},
+      {code:'BHS-102', name:'Technical Writing & Professional Communication', ltp:[2,1,2]},
+    ]},
+  { id:'bba', name:'BBA', sections:['A','B'], room:'TL-113 / TL-114',
+    subjects:[
+      {code:'BBA-114', name:'Financial Accounting', ltp:[3,0,0]},
+      {code:'BBA-115', name:'Principles & Practices of Management', ltp:[3,0,0]},
+      {code:'BBA-116', name:'Quantitative Techniques for Business Research', ltp:[3,0,0]},
+      {code:'BBA-A01', name:'Business Communication for Managers', ltp:[2,0,0]},
+      {code:'BHM-121', name:'Industrial Psychology / IPR', ltp:[2,0,0]},
+      {code:'AUC-108', name:'Ability / Value Added Course', ltp:[2,0,0]},
+    ]},
+  { id:'bpharm', name:'B.Pharm', sections:['A'], room:'CH-206',
+    subjects:[
+      {code:'BPT101T', name:'Human Anatomy, Physiology & Pathophysiology I', ltp:[3,0,0]},
+      {code:'BPT102T', name:'Introduction to Pharmacognosy', ltp:[3,0,0]},
+      {code:'BPT103T', name:'Pharmaceutical Inorganic & Analytical Chemistry', ltp:[3,0,0]},
+      {code:'BPT104T', name:'Basics of Python Programming', ltp:[2,0,0]},
+      {code:'BPT105T', name:'General Pharmacy', ltp:[2,0,0]},
+      {code:'BPT106T', name:'Healthcare Psychology & Communication Skills', ltp:[2,0,0]},
+      {code:'BPT107P', name:'Pharmacognosy (Practical)', ltp:[0,0,2]},
+      {code:'BPT108P', name:'Inorganic & Analytical Chemistry (Practical)', ltp:[0,0,2]},
+      {code:'BPT109P', name:'General Pharmacy (Practical)', ltp:[0,0,2]},
+      {code:'BPT110P', name:'Healthcare Psychology (Practical)', ltp:[0,0,2]},
+      {code:'BPT111P', name:'Anatomy & Physiology (Practical)', ltp:[0,0,2]},
+    ]},
+];
+
+const EVENTS = [
+  {start:'2026-07-29', end:'2026-07-30', title:'Physical Reporting at MMMUT Gorakhpur'},
+  {start:'2026-07-31', end:'2026-07-31', title:'Orientation Program'},
+  {start:'2026-08-01', end:'2026-08-22', title:'Induction Program for Newly Admitted Students (IPNS-2026)'},
+  {start:'2026-08-03', end:'2026-08-03', title:'Commencement of classes (partially)'},
+  {start:'2026-09-18', end:'2026-09-18', title:'Display of Mid Semester Attendance by HoD'},
+  {start:'2026-09-21', end:'2026-09-25', title:'Minor Test Examination'},
+  {start:'2026-11-09', end:'2026-11-16', title:'Mid Semester Break'},
+  {start:'2026-11-21', end:'2026-11-22', title:'Alumni Meet'},
+  {start:'2026-11-23', end:'2026-11-23', title:'Last date for end semester classes'},
+  {start:'2026-11-24', end:'2026-11-27', title:'Practical Exam / Doubt Clearing classes'},
+  {start:'2026-11-26', end:'2026-11-26', title:'Display of attendance by Dean Office'},
+  {start:'2026-11-30', end:'2026-12-08', title:'End Semester Major Examination'},
+  {start:'2026-12-01', end:'2026-12-01', title:'University Foundation Day'},
+  {start:'2026-12-09', end:'2026-12-12', title:'Semester Break'},
+  {start:'2026-12-12', end:'2026-12-12', title:'Last date for evaluation of answer sheets & marks uploading'},
+  {start:'2026-12-14', end:'2026-12-14', title:'Last date for grade moderation committee meeting (1st Year)'},
+  {start:'2026-12-15', end:'2026-12-15', title:'Last date for declaration of semester result'},
+  {start:'2026-12-09', end:'2026-12-12', title:'Online registration (Even Semester)'},
+  {start:'2026-12-14', end:'2026-12-14', title:'Commencement of classes (Even Semester)'},
+  {start:'2026-12-18', end:'2026-12-20', title:'CSA Activity — Tech Srijan'},
+  {start:'2027-01-30', end:'2027-01-30', title:'Display of Mid Semester Attendance by HoD'},
+  {start:'2027-02-01', end:'2027-02-06', title:'Minor Test Examination'},
+  {start:'2027-02-12', end:'2027-02-13', title:'CSA Activity — Annual Sports Meet'},
+  {start:'2027-02-26', end:'2027-02-28', title:'CSA Activity — Cultural Program'},
+  {start:'2027-03-22', end:'2027-03-27', title:'Mid Semester Break'},
+  {start:'2027-04-17', end:'2027-04-17', title:'Last date for end semester classes'},
+  {start:'2027-04-19', end:'2027-04-24', title:'Practical Exam / Doubt Clearing classes'},
+  {start:'2027-04-22', end:'2027-04-22', title:'Display of attendance by Dean Office'},
+  {start:'2027-04-26', end:'2027-05-05', title:'End Semester Major Examination'},
+  {start:'2027-05-05', end:'2027-06-30', title:'Session Break'},
+  {start:'2027-05-10', end:'2027-05-10', title:'Last date for evaluation of answer sheets & marks uploading'},
+  {start:'2027-05-12', end:'2027-05-12', title:'Grade moderation committee meeting (1st Year)'},
+  {start:'2027-05-07', end:'2027-05-14', title:'Social Work / Training — Dean of Extension'},
+  {start:'2027-05-13', end:'2027-05-13', title:'Last date for declaration of semester result'},
+  {start:'2027-05-16', end:'2027-06-14', title:'Summer Break for Teachers'},
+  {start:'2027-07-01', end:'2027-07-10', title:'Online registration & fee deposit — Second Year'},
+];
+
+/* ============================================================
+   SEEDED SCHEDULE GENERATOR
+   Deterministic per branch+section so it's stable across visits.
+   Distributes subjects across the week proportional to L/T/P hours.
+   ============================================================ */
+function hashSeed(str){
+  let h = 1779033703 ^ str.length;
+  for (let i=0;i<str.length;i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function(){
+    h = Math.imul(h ^ (h >>> 16), 2246822519);
+    h = Math.imul(h ^ (h >>> 13), 3266489917);
+    h = (h ^= h >>> 16) >>> 0;
+    return h / 4294967296;
+  };
+}
+function seededShuffle(arr, rng){
+  const a = arr.slice();
+  for (let i=a.length-1;i>0;i--){
+    const j = Math.floor(rng()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildSchedule(branch, section){
+  const rng = hashSeed(branch.id+'::'+section);
+  // grid[day][periodKey] = {code,name,type} | null
+  const grid = {};
+  DAYS.forEach(d => { grid[d] = {}; TEACH_PERIODS.forEach(p=> grid[d][p.key]=null); });
+
+  const dayHas = {}; DAYS.forEach(d=>dayHas[d]=new Set());
+
+  // ---- Lectures + tutorials into the four morning periods ----
+  let units = [];
+  branch.subjects.forEach(s=>{
+    const [L,T] = s.ltp;
+    for(let i=0;i<L;i++) units.push({code:s.code,name:s.name,type:'Lecture'});
+    for(let i=0;i<T;i++) units.push({code:s.code,name:s.name,type:'Tutorial'});
+  });
+  units = seededShuffle(units, rng);
+
+  const morningSlots = [];
+  DAYS.forEach(d=> ['I','II','III','IV'].forEach(k=> morningSlots.push({day:d,key:k})));
+  const shuffledMorning = seededShuffle(morningSlots, rng);
+
+  const remaining = units.slice();
+  shuffledMorning.forEach(slot=>{
+    if(!remaining.length) return;
+    let idx = remaining.findIndex(u=>!dayHas[slot.day].has(u.code));
+    if(idx===-1) idx = 0; // no conflict-free unit left — place anyway rather than drop it
+    const u = remaining.splice(idx,1)[0];
+    grid[slot.day][slot.key] = u;
+    dayHas[slot.day].add(u.code);
+  });
+
+  // ---- Practicals (2-period blocks) into the afternoon periods ----
+  // Every subject with practical hours is guaranteed a slot: each block first
+  // tries to avoid a day that already has that subject's lecture, but falls
+  // back to any free pair rather than being silently dropped.
+  let blocks = [];
+  branch.subjects.forEach(s=>{
+    const P = s.ltp[2];
+    const blockCount = Math.max(0, Math.round(P/2));
+    for(let i=0;i<blockCount;i++) blocks.push({code:s.code,name:s.name,type:'Practical'});
+  });
+  blocks = seededShuffle(blocks, rng);
+
+  let pairSlots = [];
+  DAYS.forEach(d=>{ pairSlots.push({day:d, keys:['V','VI']}); pairSlots.push({day:d, keys:['VII','VIII']}); });
+  pairSlots = seededShuffle(pairSlots, rng);
+
+  const usedPair = new Set();
+  function tryPlaceBlock(block, avoidSameDay){
+    for(const pair of pairSlots){
+      const pid = pair.day+':'+pair.keys[0];
+      if(usedPair.has(pid)) continue;
+      if(avoidSameDay && dayHas[pair.day].has(block.code)) continue;
+      grid[pair.day][pair.keys[0]] = block;
+      grid[pair.day][pair.keys[1]] = block;
+      dayHas[pair.day].add(block.code);
+      usedPair.add(pid);
+      return true;
+    }
+    return false;
+  }
+  blocks.forEach(block=>{
+    if(!tryPlaceBlock(block, true)){
+      tryPlaceBlock(block, false); // relax the same-day constraint rather than drop the block
+    }
+  });
+
+  // Fill anything still empty with Self Study
+  DAYS.forEach(d=>{
+    TEACH_PERIODS.forEach(p=>{
+      if(!grid[d][p.key]) grid[d][p.key] = {code:'—', name:'Self Study / Library', type:'Free'};
+    });
+  });
+
+  return grid;
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentUser = null; // {username, name, branchId, section}
+let currentUid = null;
+let attendanceCache = {};
+let scheduleCache = null;
+let scheduleView = 'today';
+let signingUp = false;
+
+function getBranch(id){ return BRANCHES.find(b=>b.id===id); }
+
+function populateBranchOptions(){
+  const sel = document.getElementById('suBranch');
+  sel.innerHTML = BRANCHES.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  populateSectionOptions();
+}
+function populateSectionOptions(){
+  const branch = getBranch(document.getElementById('suBranch').value);
+  const sel = document.getElementById('suSection');
+  sel.innerHTML = branch.sections.map(s=>`<option value="${s}">Section ${s}</option>`).join('');
+}
+
+function switchAuthTab(which){
+  document.getElementById('tabLogin').classList.toggle('active', which==='login');
+  document.getElementById('tabSignup').classList.toggle('active', which==='signup');
+  document.getElementById('loginForm').style.display = which==='login' ? 'block':'none';
+  document.getElementById('signupForm').style.display = which==='signup' ? 'block':'none';
+}
+
+function showError(id, msg){
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display='block';
+}
+function hideError(id){ document.getElementById(id).style.display='none'; }
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function authEmail(username){
+  return username + '@mmmut.local';
+}
+
+function friendlyAuthError(error, mode){
+  const code = error && error.code ? error.code : '';
+  if(code === 'auth/email-already-in-use') return 'That username is already taken.';
+  if(code === 'auth/invalid-credential' || code === 'auth/wrong-password') return 'Incorrect username or password.';
+  if(code === 'auth/user-not-found') return 'No account with that username. Try signing up.';
+  if(code === 'auth/weak-password') return 'Password should be at least 6 characters.';
+  if(code === 'auth/network-request-failed') return 'Network error. Check your connection and try again.';
+  return mode === 'signup' ? 'Something went wrong creating your account.' : 'Could not log in — please try again.';
+}
+
+async function handleSignup(){
+  hideError('signupError');
+  const name = document.getElementById('suName').value.trim();
+  const username = document.getElementById('suUsername').value.trim().toLowerCase();
+  const password = document.getElementById('suPassword').value;
+  const branchId = document.getElementById('suBranch').value;
+  const section = document.getElementById('suSection').value;
+
+  if(!name || !username || !password){ showError('signupError','Fill in your name, username and password.'); return; }
+  if(username.length < 3){ showError('signupError','Username should be at least 3 characters.'); return; }
+  if(password.length < 6){ showError('signupError','Password should be at least 6 characters.'); return; }
+
+  signingUp = true;
+  try{
+    const credential = await createUserWithEmailAndPassword(auth, authEmail(username), password);
+    const record = { name, username, branchId, section, createdAt: Date.now() };
+    await setDoc(doc(usersCollection, credential.user.uid), record);
+    await setDoc(doc(attendanceCollection, credential.user.uid), {attendance:{}});
+    await loginAs(record, credential.user.uid);
+  }catch(e){
+    showError('signupError', friendlyAuthError(e, 'signup'));
+  }finally{
+    signingUp = false;
+  }
+}
+
+async function handleLogin(){
+  hideError('loginError');
+  const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  if(!username || !password){ showError('loginError','Enter your username and password.'); return; }
+
+  try{
+    const credential = await signInWithEmailAndPassword(auth, authEmail(username), password);
+    const record = await loadUserProfile(credential.user.uid);
+    await loginAs(record, credential.user.uid);
+  }catch(e){
+    showError('loginError', friendlyAuthError(e, 'login'));
+  }
+}
+
+async function handleLogout(){
+  try{ await signOut(auth); }catch(e){}
+  currentUser = null;
+  currentUid = null;
+  attendanceCache = {};
+  document.getElementById('app').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+  document.getElementById('loginUsername').value='';
+  document.getElementById('loginPassword').value='';
+}
+
+async function loadUserProfile(uid){
+  const snap = await getDoc(doc(usersCollection, uid));
+  if(!snap.exists()) throw new Error('missing-profile');
+  const data = snap.data();
+  return {
+    name: data.name,
+    username: data.username,
+    branchId: data.branchId,
+    section: data.section
+  };
+}
+
+async function loadAttendanceMap(uid){
+  const ref = doc(attendanceCollection, uid);
+  const snap = await getDoc(ref);
+  if(!snap.exists()){
+    await setDoc(ref, {attendance:{}});
+    return {};
+  }
+  const data = snap.data();
+  return data.attendance || {};
+}
+
+async function loginAs(record, uid){
+  currentUid = uid;
+  attendanceCache = await loadAttendanceMap(uid);
+  currentUser = record;
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+
+  const branch = getBranch(record.branchId);
+  document.getElementById('pillName').textContent = record.name;
+  document.getElementById('pillBranch').textContent = branch.name.replace('B.Tech — ','') + ' · Sec ' + record.section;
+  document.getElementById('pillAvatar').textContent = record.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+  scheduleCache = buildSchedule(branch, record.section);
+  renderTopbarDate();
+  renderSchedule();
+  renderEvents();
+  await renderAttendanceStats();
+}
+
+/* ============================================================
+   RENDER — schedule
+   ============================================================ */
+function renderTopbarDate(){
+  const now = new Date();
+  const opts = {weekday:'long', year:'numeric', month:'long', day:'numeric'};
+  document.getElementById('todayLabel').textContent = now.toLocaleDateString('en-IN', opts);
+}
+
+function currentPeriodKey(){
+  const now = new Date();
+  const mins = now.getHours()*60 + now.getMinutes();
+  for(const p of PERIODS){
+    const [sh,sm] = p.start.split(':').map(Number);
+    const [eh,em] = p.end.split(':').map(Number);
+    const s = sh*60+sm, e = eh*60+em;
+    if(mins>=s && mins<e) return p.key;
+  }
+  return null;
+}
+
+function todayName(){
+  const idx = new Date().getDay(); // 0 Sun .. 6 Sat
+  const map = {1:'Monday',2:'Tuesday',3:'Wednesday',4:'Thursday',5:'Friday'};
+  return map[idx] || null;
+}
+
+function setScheduleView(v){
+  scheduleView = v;
+  document.getElementById('tabToday').classList.toggle('active', v==='today');
+  document.getElementById('tabWeek').classList.toggle('active', v==='week');
+  document.getElementById('tabImage').classList.toggle('active', v==='image');
+  document.getElementById('todayView').style.display = v==='today' ? 'block':'none';
+  document.getElementById('weekView').style.display = v==='week' ? 'block':'none';
+  document.getElementById('imageView').style.display = v==='image' ? 'block':'none';
+  if(v==='image'){
+    if(document.fonts && document.fonts.ready){
+      document.fonts.ready.then(drawTimetableImage);
+    } else {
+      drawTimetableImage();
+    }
+  } else {
+    renderSchedule();
+  }
+}
+
+async function getAttendanceMap(){
+  return attendanceCache || {};
+}
+async function setAttendanceMap(map){
+  attendanceCache = map;
+  if(!currentUid) return;
+  const ref = doc(attendanceCollection, currentUid);
+  try{
+    await updateDoc(ref, {attendance: map});
+  }catch(e){
+    await setDoc(ref, {attendance: map});
+  }
+}
+
+function dateKey(d){ return d.toISOString().slice(0,10); }
+
+async function markAttendance(periodKey, subjectCode, status){
+  const map = await getAttendanceMap();
+  const today = dateKey(new Date());
+  if(!map[today]) map[today] = {};
+  const cellKey = periodKey+'::'+subjectCode;
+  if(map[today][cellKey] === status){
+    delete map[today][cellKey]; // toggle off
+  } else {
+    map[today][cellKey] = status;
+  }
+  await setAttendanceMap(map);
+  renderSchedule();
+  await renderAttendanceStats();
+}
+
+async function renderSchedule(){
+  const day = todayName();
+  const nowKey = currentPeriodKey();
+  const map = await getAttendanceMap();
+  const today = dateKey(new Date());
+  const todayMarks = map[today] || {};
+
+  const todayView = document.getElementById('todayView');
+  if(!day){
+    todayView.innerHTML = `<div class="empty-note">It's the weekend — no scheduled periods today. Enjoy it.</div>`;
+  } else {
+    let html = `<div class="rail">`;
+    PERIODS.forEach(p=>{
+      if(p.key==='LUNCH'){
+        html += `<div class="rail-item lunch"><div class="rail-dot">·</div><div class="rail-row"><span class="rail-time">Lunch · ${fmtTime(p.start)}–${fmtTime(p.end)}</span></div></div>`;
+        return;
+      }
+      const cell = scheduleCache[day][p.key];
+      const isNow = p.key === nowKey;
+      const isPast = comparePeriod(p.key, nowKey) < 0;
+      const stateClass = isNow ? 'now' : (isPast ? 'done' : '');
+      const cellKey = p.key+'::'+cell.code;
+      const mark = todayMarks[cellKey];
+      const isFree = cell.code === '—';
+      html += `<div class="rail-item ${stateClass}">
+        <div class="rail-dot">${p.key}</div>
+        <div class="rail-row">
+          <div>
+            <div class="rail-subject">${cell.name}</div>
+            <div class="rail-meta">${cell.code!=='—'?cell.code+' · ':''}${cell.type} · ${fmtTime(p.start)}–${fmtTime(p.end)}</div>
+          </div>
+          ${isFree ? '' : `
+          <div class="rail-actions">
+            ${mark ? `<span class="status-tag ${mark}">${mark}</span>` : ''}
+            <button class="mini-btn present ${mark==='present'?'active':''}" title="Mark present" onclick="markAttendance('${p.key}','${cell.code}','present')">✓</button>
+            <button class="mini-btn absent ${mark==='absent'?'active':''}" title="Mark absent" onclick="markAttendance('${p.key}','${cell.code}','absent')">✕</button>
+          </div>`}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+    todayView.innerHTML = html;
+  }
+
+  // Week view
+  const weekView = document.getElementById('weekView');
+  let wh = `<div class="week-grid">`;
+  wh += `<div></div>` + DAY_SHORT.map(d=>`<div class="wh">${d}</div>`).join('');
+  TEACH_PERIODS.forEach(p=>{
+    wh += `<div class="week-per">${p.key}</div>`;
+    DAYS.forEach(d=>{
+      const cell = scheduleCache[d][p.key];
+      const cls = cell.type==='Practical' ? 'p' : 'lec';
+      wh += `<div class="week-cell ${cls}"><div class="wc-code">${cell.code}</div><div class="wc-type">${cell.type}</div></div>`;
+    });
+  });
+  wh += `</div>
+  <div style="margin-top:12px;font-size:11px;color:var(--ink-soft);">
+    <span class="legend-dot" style="background:var(--teal-soft);border:1px solid var(--teal);"></span>Practical block
+    <span style="margin-left:14px;" class="legend-dot" style="background:var(--paper);border:1px solid var(--paper-line);"></span>Lecture / Tutorial
+  </div>`;
+  weekView.innerHTML = wh;
+}
+
+function fmtTime(t){
+  const [h,m] = t.split(':').map(Number);
+  const ap = h>=12 ? 'pm':'am';
+  const h12 = h%12===0?12:h%12;
+  return `${h12}:${m.toString().padStart(2,'0')}${ap}`;
+}
+function comparePeriod(key, nowKey){
+  const order = ['I','II','III','IV','V','VI','VII','VIII'];
+  if(!nowKey) return -1;
+  return order.indexOf(key) - order.indexOf(nowKey);
+}
+
+/* ============================================================
+   RENDER — downloadable timetable image (per branch/section)
+   ============================================================ */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function wrapText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
+  const words = text.split(' ');
+  let line=''; let ly=y; let lines=0;
+  for(let n=0;n<words.length;n++){
+    const test = line+words[n]+' ';
+    if(ctx.measureText(test).width>maxWidth && n>0){
+      ctx.fillText(line.trim(), x, ly);
+      line = words[n]+' '; ly+=lineHeight; lines++;
+      if(lines>=maxLines-1){
+        // last allowed line — truncate rest with ellipsis if needed
+        const rest = words.slice(n+1).join(' ');
+        let last = line.trim();
+        if(rest){
+          while(ctx.measureText(last+'…').width>maxWidth && last.length>0){ last = last.slice(0,-1); }
+          last += '…';
+        }
+        ctx.fillText(last, x, ly);
+        return;
+      }
+    } else { line = test; }
+  }
+  ctx.fillText(line.trim(), x, ly);
+}
+
+function drawTimetableImage(){
+  const canvas = document.getElementById('ttCanvas');
+  if(!canvas || !currentUser) return;
+  const branch = getBranch(currentUser.branchId);
+  const dpr = window.devicePixelRatio || 1;
+  const W = 1180, H = 760;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.fillStyle = '#F7F5EE'; ctx.fillRect(0,0,W,H);
+
+  // header band
+  ctx.fillStyle = '#152A3B'; ctx.fillRect(0,0,W,92);
+  ctx.fillStyle = '#E4D2A4'; ctx.font = '600 11px "IBM Plex Mono", monospace';
+  ctx.fillText('M.M.M. UNIVERSITY OF TECHNOLOGY, GORAKHPUR  ·  SESSION 2026–27', 28, 24);
+  ctx.fillStyle = '#F1ECDD'; ctx.font = '600 25px "Fraunces", serif';
+  ctx.fillText(branch.name + ' — Section ' + currentUser.section, 28, 58);
+  ctx.font = '400 12px "IBM Plex Mono", monospace'; ctx.fillStyle = '#CBD6DD';
+  ctx.fillText('Room: ' + branch.room, 28, 80);
+
+  const gridLeft = 96, gridTop = 118;
+  const dayColW = (W-28-gridLeft)/5;
+  const rowH = (H-gridTop-28)/8;
+
+  // day headers
+  ctx.textAlign='center';
+  DAYS.forEach((d,i)=>{
+    ctx.fillStyle='#152A3B'; ctx.font='700 13px "IBM Plex Sans", sans-serif';
+    ctx.fillText(DAY_SHORT[i].toUpperCase(), gridLeft+dayColW*i+dayColW/2, gridTop-16);
+  });
+
+  TEACH_PERIODS.forEach((p,ri)=>{
+    const y = gridTop + rowH*ri;
+    ctx.fillStyle='#2C4258'; ctx.font='700 12px "IBM Plex Mono", monospace';
+    ctx.fillText(p.key, 44, y+rowH/2-4);
+    ctx.font='400 9px "IBM Plex Mono", monospace'; ctx.fillStyle='#8B8676';
+    ctx.fillText(fmtTime(p.start), 44, y+rowH/2+11);
+
+    ctx.textAlign='left';
+    DAYS.forEach((d,ci)=>{
+      const x = gridLeft+dayColW*ci;
+      const cell = scheduleCache[d][p.key];
+      const isP = cell.type==='Practical';
+      const isFree = cell.code==='—';
+      ctx.fillStyle = isFree ? '#F1EFE6' : (isP ? '#DCE9E6' : '#EDEAE0');
+      ctx.strokeStyle = '#D9D4C4'; ctx.lineWidth=1;
+      roundRect(ctx, x+3, y+3, dayColW-6, rowH-6, 7);
+      ctx.fill(); ctx.stroke();
+
+      if(!isFree){
+        ctx.fillStyle='#152A3B'; ctx.font='700 11px "IBM Plex Mono", monospace';
+        ctx.fillText(cell.code, x+11, y+21);
+        ctx.font='400 9.5px "IBM Plex Sans", sans-serif'; ctx.fillStyle='#2C4258';
+        wrapText(ctx, cell.name, x+11, y+35, dayColW-22, 11, 3);
+        ctx.font='500 8.5px "IBM Plex Mono", monospace'; ctx.fillStyle = isP ? '#2F5D5A' : '#B08A3E';
+        ctx.fillText(cell.type.toUpperCase(), x+11, y+rowH-9);
+      } else {
+        ctx.fillStyle='#B7B2A0'; ctx.font='italic 9.5px "IBM Plex Sans", sans-serif';
+        ctx.fillText('Self study', x+11, y+rowH/2+3);
+      }
+      ctx.textAlign='left';
+    });
+    ctx.textAlign='left';
+  });
+
+  ctx.fillStyle='#8B8676'; ctx.font='400 9.5px "IBM Plex Mono", monospace';
+  ctx.fillText('Generated by The Ledger · exact slot placement is approximate, subjects & credit hours are as per curriculum', 28, H-12);
+}
+
+function downloadTimetableImage(){
+  const canvas = document.getElementById('ttCanvas');
+  const branch = getBranch(currentUser.branchId);
+  const link = document.createElement('a');
+  link.download = branch.id + '-sec' + currentUser.section + '-timetable.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+/* ============================================================
+   RENDER — attendance stats + leave planner
+   ============================================================ */
+// Given present/absent counts and a target fraction (e.g. 0.75), work out
+// either how many more classes can be skipped and stay at/above target,
+// or how many upcoming classes must be attended in a row to reach it.
+function computeLeaveInfo(present, absent, targetPct){
+  const total = present + absent;
+  const target = targetPct / 100;
+  if(total === 0) return {type:'none'};
+  const currentPct = present/total;
+  if(currentPct >= target){
+    // max x such that present/(total+x) >= target  =>  x <= present/target - total
+    const x = Math.floor(present/target - total + 1e-9);
+    return {type:'skip', value: Math.max(0,x)};
+  } else {
+    // min y such that (present+y)/(total+y) >= target => y >= (target*total - present)/(1-target)
+    const y = Math.ceil((target*total - present)/(1-target) - 1e-9);
+    return {type:'attend', value: Math.max(1,y)};
+  }
+}
+
+async function renderAttendanceStats(){
+  const branch = getBranch(currentUser.branchId);
+  const map = await getAttendanceMap();
+  const targetPct = Number(document.getElementById('targetPct').value);
+  const counts = {}; // code -> {present,absent}
+  branch.subjects.forEach(s=> counts[s.code] = {present:0, absent:0, name:s.name});
+
+  Object.values(map).forEach(dayMap=>{
+    Object.entries(dayMap).forEach(([cellKey,status])=>{
+      const code = cellKey.split('::')[1];
+      if(counts[code]){
+        if(status==='present') counts[code].present++;
+        else if(status==='absent') counts[code].absent++;
+      }
+    });
+  });
+
+  let totalP=0, totalA=0;
+  const statsEl = document.getElementById('subjectStats');
+  let html = '';
+  branch.subjects.forEach(s=>{
+    const c = counts[s.code];
+    const total = c.present + c.absent;
+    totalP += c.present; totalA += c.absent;
+    const pct = total ? Math.round((c.present/total)*100) : null;
+    const barClass = pct===null ? '' : (pct<65 ? 'danger' : (pct<75 ? 'warn' : ''));
+    const leave = total ? computeLeaveInfo(c.present, c.absent, targetPct) : {type:'none'};
+    let leaveLine = '';
+    if(leave.type==='skip'){
+      leaveLine = leave.value > 0
+        ? `<div class="leave-line ok">can miss ${leave.value} more</div>`
+        : `<div class="leave-line warn">no more misses left</div>`;
+    } else if(leave.type==='attend'){
+      leaveLine = `<div class="leave-line warn">attend next ${leave.value} straight</div>`;
+    }
+    html += `<div class="stat-row">
+      <div class="stat-label" title="${s.name}">${s.code}${leaveLine}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill ${barClass}" style="width:${pct===null?0:pct}%;"></div></div>
+      <div class="stat-pct">${pct===null?'—':pct+'%'}</div>
+    </div>`;
+  });
+  statsEl.innerHTML = html || `<div class="empty-note">No attendance marked yet — tick classes off as they happen.</div>`;
+
+  const overallTotal = totalP+totalA;
+  const overallPct = overallTotal ? Math.round((totalP/overallTotal)*100) : null;
+  document.getElementById('overallPct').textContent = overallPct===null ? '—' : overallPct+'%';
+  document.getElementById('overallCounts').innerHTML = overallTotal
+    ? `<b>${totalP}</b> attended<br><b>${totalA}</b> missed<br>of ${overallTotal} marked`
+    : `Nothing marked yet this semester.`;
+
+  const leaveEl = document.getElementById('overallLeave');
+  if(!overallTotal){
+    leaveEl.innerHTML = `<span style="color:var(--ink-soft);">Mark a few classes to see how much leave you can safely take toward ${targetPct}%.</span>`;
+  } else {
+    const overallLeave = computeLeaveInfo(totalP, totalA, targetPct);
+    if(overallLeave.type==='skip'){
+      leaveEl.innerHTML = overallLeave.value > 0
+        ? `You're at <b>${overallPct}%</b> overall — you can take <b>${overallLeave.value}</b> more period${overallLeave.value===1?'':'s'} off and stay at or above ${targetPct}%.`
+        : `You're at <b>${overallPct}%</b>, right at the edge — one more miss will drop you below ${targetPct}%.`;
+    } else {
+      leaveEl.innerHTML = `You're at <b>${overallPct}%</b>, below ${targetPct}%. Attend the next <b>${overallLeave.value}</b> period${overallLeave.value===1?'':'s'} in a row (with no misses) to climb back to ${targetPct}%.`;
+    }
+  }
+}
+
+/* ============================================================
+   RENDER — events
+   ============================================================ */
+function renderEvents(){
+  const now = new Date();
+  const todayStr = dateKey(now);
+  const upcoming = EVENTS
+    .map(e=>({...e, endDate:new Date(e.end+'T23:59:59')}))
+    .filter(e=> e.endDate >= now)
+    .sort((a,b)=> new Date(a.start) - new Date(b.start))
+    .slice(0,7);
+
+  const el = document.getElementById('eventsList');
+  if(!upcoming.length){ el.innerHTML = `<div class="empty-note">No more scheduled events this session.</div>`; return; }
+
+  el.innerHTML = upcoming.map(e=>{
+    const start = new Date(e.start+'T00:00:00');
+    const isOngoing = todayStr >= e.start && todayStr <= e.end;
+    const mon = start.toLocaleDateString('en-IN',{month:'short'});
+    const day = start.getDate();
+    const rangeStr = e.start === e.end
+      ? start.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})
+      : `${start.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${new Date(e.end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+    return `<div class="event-item">
+      <div class="event-date"><span class="d">${day}</span>${mon}</div>
+      <div>
+        <div class="event-title">${e.title}</div>
+        <div class="event-range">${rangeStr}</div>
+        ${isOngoing ? `<span class="event-badge today">ongoing</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   BOOTSTRAP
+   ============================================================ */
+async function boot(){
+  populateBranchOptions();
+  onAuthStateChanged(auth, async user=>{
+    if(!user){
+      currentUser = null;
+      currentUid = null;
+      attendanceCache = {};
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('app').style.display='none';
+      document.getElementById('authScreen').style.display='flex';
+      return;
+    }
+
+    try{
+      const record = await loadUserProfile(user.uid);
+      await loginAs(record, user.uid);
+      document.getElementById('loadingScreen').style.display='none';
+    }catch(e){
+      if(signingUp) return;
+      await signOut(auth);
+      document.getElementById('loadingScreen').style.display='none';
+      document.getElementById('app').style.display='none';
+      document.getElementById('authScreen').style.display='flex';
+      showError('loginError','Could not load your profile. Please log in again.');
+    }
+  });
+
+  setInterval(()=>{ if(currentUser){ renderTopbarDate(); renderSchedule(); } }, 60000);
+}
+
+window.switchAuthTab = switchAuthTab;
+window.handleSignup = handleSignup;
+window.handleLogin = handleLogin;
+window.handleLogout = handleLogout;
+window.setScheduleView = setScheduleView;
+window.markAttendance = markAttendance;
+window.downloadTimetableImage = downloadTimetableImage;
+
+boot();
+</script>
+</body>
+</html>
