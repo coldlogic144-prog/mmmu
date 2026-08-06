@@ -1881,6 +1881,24 @@
                             <select id="suSection"></select>
                         </div>
                     </div>
+                    <!-- Hostel Field -->
+                    <div class="field">
+                        <label>Hostel</label>
+                        <select id="suHostel">
+                            <option value="Day Scholar">Day Scholar</option>
+                            <option value="Tagore Hostel">Tagore Hostel</option>
+                            <option value="VS Hostel">VS Hostel</option>
+                        </select>
+                    </div>
+                    <!-- Gender Field -->
+                    <div class="field">
+                        <label>Gender</label>
+                        <select id="suGender">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                     <button class="btn-primary" onclick="handleSignup()">Create account</button>
                     <div class="auth-error" id="signupError"></div>
                     <div class="auth-hint">This is a student-built tracker — data is stored so classmates using this same link can also log in. Please don't reuse a sensitive password.</div>
@@ -2148,6 +2166,25 @@
             <div class="field">
                 <label>Section</label>
                 <select id="profileSection"></select>
+            </div>
+            <!-- Hostel Field in Profile -->
+            <div class="field">
+                <label>Hostel</label>
+                <select id="profileHostel">
+                    <option value="Day Scholar">Day Scholar</option>
+                    <option value="Tagore Hostel">Tagore Hostel</option>
+                    <option value="VS Hostel">VS Hostel</option>
+                </select>
+            </div>
+            <!-- Gender Field in Profile -->
+            <div class="field">
+                <label>Gender</label>
+                <select id="profileGender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Not specified">Not specified</option>
+                </select>
             </div>
             <button class="btn-primary" onclick="saveProfile()">Save Section</button>
 
@@ -3471,6 +3508,10 @@
             document.getElementById('profileBranch').value = branch.name;
             const sel = document.getElementById('profileSection');
             sel.innerHTML = branch.sections.map(s => `<option value="${s}" ${s===currentUser.section?'selected':''}>${s}</option>`).join('');
+            // Set hostel and gender
+            document.getElementById('profileHostel').value = currentUser.hostel || 'Day Scholar';
+            document.getElementById('profileGender').value = currentUser.gender || 'Not specified';
+            // Clear password fields
             document.getElementById('profileOldPassword').value = '';
             document.getElementById('profileNewPassword').value = '';
             document.getElementById('profileConfirmPassword').value = '';
@@ -3483,14 +3524,19 @@
 
         async function saveProfile() {
             const newSection = document.getElementById('profileSection').value;
-            if (newSection === currentUser.section) {
+            const newHostel = document.getElementById('profileHostel').value;
+            const newGender = document.getElementById('profileGender').value;
+            if (newSection === currentUser.section && newHostel === currentUser.hostel && newGender === currentUser.gender) {
                 showToast('No change made.');
                 closeProfileModal();
                 return;
             }
             try {
-                await updateDoc(doc(usersCollection, currentUid), { section: newSection });
+                const updates = { section: newSection, hostel: newHostel, gender: newGender };
+                await updateDoc(doc(usersCollection, currentUid), updates);
                 currentUser.section = newSection;
+                currentUser.hostel = newHostel;
+                currentUser.gender = newGender;
                 const branch = getBranch(currentUser.branchId);
                 scheduleCache = buildSchedule(branch, newSection);
                 renderSchedule();
@@ -3570,6 +3616,8 @@
             const password = document.getElementById('suPassword').value;
             const branchId = document.getElementById('suBranch').value;
             const section = document.getElementById('suSection').value;
+            const hostel = document.getElementById('suHostel').value;
+            const gender = document.getElementById('suGender').value;
             if (!name || !username || !password) { showError('signupError', 'Fill in your name, username and password.');
                 return; }
             if (username.length < 3) { showError('signupError', 'Username should be at least 3 characters.'); return; }
@@ -3590,6 +3638,8 @@
                     username,
                     branchId,
                     section,
+                    hostel,
+                    gender,
                     isAdmin: isAdminFlag,
                     adminRequested: false,
                     createdAt: Date.now(),
@@ -3651,6 +3701,8 @@
                 username: data.username,
                 branchId: data.branchId,
                 section: data.section,
+                hostel: data.hostel || 'Day Scholar',
+                gender: data.gender || 'Not specified',
                 isAdmin: data.isAdmin || false,
                 adminRequested: data.adminRequested || false,
                 lastReadPosts: data.lastReadPosts || 0
@@ -3958,7 +4010,7 @@
               <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
                 <table style="width:100%;border-collapse:collapse;font-size:13px;">
                   <thead style="background:var(--ink);color:#F1ECDD;position:sticky;top:0;">
-                    <tr><th style="padding:10px 8px;text-align:left;">Name</th><th style="padding:10px 8px;text-align:left;">Username</th><th style="padding:10px 8px;text-align:left;">Branch</th><th style="padding:10px 8px;text-align:left;">Section</th><th style="padding:10px 8px;text-align:left;">Admin</th><th style="padding:10px 8px;text-align:left;">Requested</th></tr>
+                    <tr><th style="padding:10px 8px;text-align:left;">Name</th><th style="padding:10px 8px;text-align:left;">Username</th><th style="padding:10px 8px;text-align:left;">Branch</th><th style="padding:10px 8px;text-align:left;">Section</th><th style="padding:10px 8px;text-align:left;">Hostel</th><th style="padding:10px 8px;text-align:left;">Gender</th><th style="padding:10px 8px;text-align:left;">Admin</th><th style="padding:10px 8px;text-align:left;">Requested</th></tr>
                   </thead>
                   <tbody>
             `;
@@ -3970,6 +4022,8 @@
                   <td style="padding:8px;">${u.username || '—'}</td>
                   <td style="padding:8px;">${branch ? branch.name : u.branchId}</td>
                   <td style="padding:8px;">${u.section || '—'}</td>
+                  <td style="padding:8px;">${u.hostel || 'Day Scholar'}</td>
+                  <td style="padding:8px;">${u.gender || 'Not specified'}</td>
                   <td style="padding:8px;">${u.isAdmin ? '✅' : '—'}</td>
                   <td style="padding:8px;">${u.adminRequested ? '⏳' : '—'}</td>
                 </tr>
