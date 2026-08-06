@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ledger — MMMUT Attendance</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
@@ -395,6 +395,11 @@
             background: var(--paper);
             border-radius: 999px;
             padding: 6px 6px 6px 14px;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .user-pill:hover {
+            background: var(--paper-line);
         }
         .user-pill-name {
             font-size: 13px;
@@ -473,18 +478,57 @@
             background: var(--moss);
             color: #fff;
         }
+        .btn-icon {
+            border: 1px solid var(--paper-line);
+            background: transparent;
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: background .15s;
+        }
+        .btn-icon:hover {
+            background: var(--paper);
+        }
+        .badge-dot {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--brick);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            min-width: 16px;
+            text-align: center;
+            line-height: 1.2;
+            border: 1px solid var(--paper-raised);
+        }
 
         .shell {
             max-width: 1180px;
             margin: 0 auto;
             padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+        .shell-grid {
             display: grid;
             grid-template-columns: 1.5fr 1fr;
             gap: 22px;
         }
         @media (max-width: 920px) {
-            .shell {
+            .shell-grid {
                 grid-template-columns: 1fr;
+                padding: 0;
+            }
+            .shell {
                 padding: 16px;
             }
         }
@@ -1250,6 +1294,71 @@
             text-align: center;
         }
 
+        /* Profile modal */
+        .profile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(21, 42, 59, .55);
+            backdrop-filter: blur(6px);
+            z-index: 150;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .profile-overlay.open {
+            display: flex;
+        }
+        .profile-panel {
+            background: var(--paper-raised);
+            border-radius: 20px;
+            max-width: 480px;
+            width: 100%;
+            padding: 28px 32px;
+            box-shadow: 0 24px 60px rgba(21, 42, 59, .25);
+            border: 1px solid var(--paper-line);
+        }
+        .profile-panel h2 {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+        .profile-panel .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--ink-soft);
+        }
+        .profile-panel .field {
+            margin-bottom: 18px;
+        }
+        .profile-panel .field label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--ink-soft);
+            display: block;
+            margin-bottom: 4px;
+        }
+        .profile-panel .field input,
+        .profile-panel .field select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--paper-line);
+            background: #fff;
+            font-size: 14px;
+            color: var(--ink);
+        }
+        .profile-panel hr {
+            margin: 16px 0;
+            border: none;
+            border-top: 1px solid var(--paper-line);
+        }
+
         @media (max-width: 720px) {
             .auth-wrap {
                 grid-template-columns: 1fr;
@@ -1285,6 +1394,9 @@
             .shell {
                 padding: 12px;
             }
+            .shell-grid {
+                padding: 0;
+            }
             .card {
                 padding: 16px;
             }
@@ -1295,6 +1407,425 @@
             .history-summary {
                 flex-wrap: wrap;
                 gap: 10px;
+            }
+        }
+
+        /* ===== FEEDBACK / HELP & FEEDBACK ===== */
+        .feedback-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(21, 42, 59, .55);
+            backdrop-filter: blur(6px);
+            z-index: 160;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .feedback-overlay.open {
+            display: flex;
+        }
+        .feedback-panel {
+            background: var(--paper-raised);
+            border-radius: 20px;
+            max-width: 640px;
+            width: 100%;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 60px rgba(21, 42, 59, .25);
+            border: 1px solid var(--paper-line);
+            overflow: hidden;
+        }
+        .feedback-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--paper-line);
+            background: var(--paper);
+            flex-shrink: 0;
+        }
+        .feedback-panel-header h2 {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 20px;
+        }
+        .feedback-panel-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--ink-soft);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .feedback-panel-header .close-btn:hover {
+            background: var(--paper-line);
+        }
+        .feedback-panel-body {
+            padding: 24px 28px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .feedback-list-item {
+            border: 1px solid var(--paper-line);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 14px;
+            background: var(--paper);
+            transition: border-color .15s;
+        }
+        .feedback-list-item:hover {
+            border-color: var(--brass-soft);
+        }
+        .feedback-list-item .fb-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .feedback-list-item .fb-ticket {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--brass);
+            font-weight: 600;
+        }
+        .feedback-list-item .fb-subject {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .feedback-list-item .fb-meta {
+            font-size: 11px;
+            color: var(--ink-soft);
+            margin-top: 4px;
+        }
+        .feedback-list-item .fb-message {
+            font-size: 13px;
+            margin-top: 6px;
+            color: var(--ink-soft);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .feedback-list-item .fb-reply {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: var(--paper-raised);
+            border-radius: 8px;
+            border-left: 3px solid var(--teal);
+            font-size: 13px;
+        }
+        .feedback-list-item .fb-reply-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--teal);
+            font-weight: 600;
+        }
+        .feedback-list-item .fb-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .fb-status-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 999px;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .fb-status-open {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+        .fb-status-in_progress {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        .fb-status-resolved {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        .fb-status-closed {
+            background: #E5E7EB;
+            color: #374151;
+        }
+
+        .fb-priority-high {
+            color: var(--brick);
+            font-weight: 600;
+        }
+        .fb-priority-medium {
+            color: var(--brass);
+            font-weight: 600;
+        }
+        .fb-priority-low {
+            color: var(--ink-soft);
+            font-weight: 600;
+        }
+
+        .fb-attachment-link {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--teal);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .feedback-empty {
+            padding: 32px 0;
+            text-align: center;
+            color: var(--ink-soft);
+            font-style: italic;
+            font-size: 13px;
+        }
+
+        /* Highlight for feedback card */
+        .feedback-highlight {
+            border-left: 4px solid var(--brass);
+            background: var(--paper);
+            box-shadow: var(--shadow);
+        }
+
+        .feedback-rating-stars {
+            display: flex;
+            gap: 6px;
+            font-size: 28px;
+            cursor: pointer;
+            user-select: none;
+            margin: 8px 0 4px;
+        }
+        .feedback-rating-stars span {
+            transition: transform .1s, color .1s;
+        }
+        .feedback-rating-stars span:hover {
+            transform: scale(1.15);
+        }
+        .feedback-rating-stars .star-off {
+            color: #D9D4C4;
+        }
+        .feedback-rating-stars .star-on {
+            color: #F59E0B;
+        }
+
+        /* Admin feedback table */
+        .fb-admin-table-wrap {
+            overflow-x: auto;
+            max-height: 540px;
+            overflow-y: auto;
+        }
+        .fb-admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+        }
+        .fb-admin-table th {
+            background: var(--ink);
+            color: #F1ECDD;
+            padding: 10px 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            white-space: nowrap;
+        }
+        .fb-admin-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--paper-line);
+            vertical-align: top;
+        }
+        .fb-admin-table tr:hover td {
+            background: var(--paper);
+        }
+        .fb-admin-table .fb-admin-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .fb-admin-table .btn-sm {
+            padding: 4px 10px;
+            font-size: 10.5px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .fb-admin-table .btn-sm.reply-btn {
+            background: var(--teal-soft);
+            color: var(--teal);
+        }
+        .fb-admin-table .btn-sm.reply-btn:hover {
+            background: var(--teal);
+            color: #fff;
+        }
+        .fb-admin-table .btn-sm.status-btn {
+            background: var(--brass-soft);
+            color: var(--ink);
+        }
+        .fb-admin-table .btn-sm.status-btn:hover {
+            background: var(--brass);
+            color: #fff;
+        }
+        .fb-admin-table .btn-sm.del-btn {
+            background: var(--brick-soft);
+            color: var(--brick);
+        }
+        .fb-admin-table .btn-sm.del-btn:hover {
+            background: var(--brick);
+            color: #fff;
+        }
+
+        .fb-admin-search {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        .fb-admin-search input,
+        .fb-admin-search select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--paper-line);
+            background: #fff;
+            font-size: 12.5px;
+            color: var(--ink);
+            outline: none;
+        }
+        .fb-admin-search input:focus,
+        .fb-admin-search select:focus {
+            border-color: var(--brass);
+        }
+        .fb-admin-search .search-box {
+            flex: 1;
+            min-width: 180px;
+        }
+        .fb-admin-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .fb-admin-filters .filter-btn {
+            padding: 5px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--paper-line);
+            background: var(--paper-raised);
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            transition: background .15s;
+        }
+        .fb-admin-filters .filter-btn.active {
+            background: var(--ink);
+            color: #F1ECDD;
+            border-color: var(--ink);
+        }
+        .fb-admin-filters .filter-btn:hover {
+            background: var(--paper);
+        }
+
+        .fb-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .fb-pagination .page-btn {
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--paper-line);
+            background: var(--paper-raised);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            transition: background .15s;
+        }
+        .fb-pagination .page-btn.active {
+            background: var(--ink);
+            color: #F1ECDD;
+            border-color: var(--ink);
+        }
+        .fb-pagination .page-btn:hover {
+            background: var(--paper);
+        }
+        .fb-pagination .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .fb-reply-modal .reply-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--paper-line);
+            background: #fff;
+            font-size: 13px;
+            color: var(--ink);
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+        .fb-reply-modal .reply-textarea:focus {
+            border-color: var(--brass);
+        }
+        .fb-reply-modal .reply-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .fb-reply-modal .reply-actions .btn-primary {
+            width: auto;
+            padding: 10px 24px;
+            margin: 0;
+        }
+
+        /* Rating card */
+        .rating-stars-display {
+            display: flex;
+            gap: 4px;
+            font-size: 22px;
+        }
+        .rating-stars-display .star-on {
+            color: #F59E0B;
+        }
+        .rating-stars-display .star-off {
+            color: #D9D4C4;
+        }
+
+        @media (max-width: 600px) {
+            .feedback-panel-body {
+                padding: 16px;
+            }
+            .feedback-panel-header {
+                padding: 14px 16px;
+            }
+            .feedback-panel-header h2 {
+                font-size: 17px;
+            }
+            .fb-admin-search {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .fb-admin-filters {
+                justify-content: center;
+            }
+            .fb-admin-table td,
+            .fb-admin-table th {
+                padding: 6px 4px;
+                font-size: 11px;
+            }
+            .fb-admin-table .btn-sm {
+                font-size: 9px;
+                padding: 3px 6px;
             }
         }
     </style>
@@ -1313,7 +1844,7 @@
             <div class="auth-side">
                 <div>
                     <div class="auth-mark">MMMUT · Gorakhpur</div>
-                    <div class="auth-title display">The <em>Ledger.</em><br>Your semester,<br>period by period.</div>
+                    <div class="auth-title display">The <em>Ledger.</em><br />Your semester,<br />period by period.</div>
                     <div class="auth-sub">Sign in to see today's timetable, mark attendance as it happens, and track where every subject stands before the next minor test.</div>
                     <div class="period-strip">
                         <div class="period-chip">I</div><div class="period-chip">II</div><div class="period-chip">III</div>
@@ -1330,17 +1861,17 @@
                 </div>
 
                 <div id="loginForm">
-                    <div class="field"><label>Username</label><input id="loginUsername" placeholder="e.g. rahul.cse26" autocomplete="username"></div>
-                    <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+                    <div class="field"><label>Username</label><input id="loginUsername" placeholder="e.g. rahul.cse26" autocomplete="username" /></div>
+                    <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" /></div>
                     <button class="btn-primary" onclick="handleLogin()">Log in</button>
                     <div class="auth-error" id="loginError"></div>
                 </div>
 
                 <div id="signupForm" style="display:none;">
-                    <div class="field"><label>Full name</label><input id="suName" placeholder="Rahul Kumar"></div>
+                    <div class="field"><label>Full name</label><input id="suName" placeholder="Rahul Kumar" /></div>
                     <div class="field-row">
-                        <div class="field"><label>Username</label><input id="suUsername" placeholder="rahul.cse26"></div>
-                        <div class="field"><label>Password</label><input id="suPassword" type="password" placeholder="••••••••"></div>
+                        <div class="field"><label>Username</label><input id="suUsername" placeholder="rahul.cse26" /></div>
+                        <div class="field"><label>Password</label><input id="suPassword" type="password" placeholder="••••••••" /></div>
                     </div>
                     <div class="field-row">
                         <div class="field"><label>Branch</label>
@@ -1369,7 +1900,11 @@
             </div>
             <div class="topbar-right">
                 <a href="https://www.mediafire.com/file/q924finlss1x9mz/app-debug.apk/file" target="_blank" class="btn-download-app">📱 Download App</a>
-                <div class="user-pill">
+                <button class="btn-icon" id="notifBell" onclick="scrollToPosts()" title="Announcements">
+                    🔔
+                    <span class="badge-dot" id="notifBadge" style="display:none;">0</span>
+                </button>
+                <div class="user-pill" onclick="openProfileModal()">
                     <div>
                         <div class="user-pill-name" id="pillName">—</div>
                         <div class="user-pill-branch" id="pillBranch">—</div>
@@ -1381,82 +1916,257 @@
         </div>
 
         <div class="shell">
-            <div>
-                <div class="card">
-                    <div class="card-head">
-                        <div>
-                            <div class="card-eyebrow">Bell schedule</div>
-                            <div class="card-title display">Today's periods</div>
-                        </div>
-                        <div class="tabbar">
-                            <button class="tab-btn active" id="tabToday" onclick="setScheduleView('today')">Today</button>
-                            <button class="tab-btn" id="tabWeek" onclick="setScheduleView('week')">Full week</button>
-                            <button class="tab-btn" id="tabImage" onclick="setScheduleView('image')">Image</button>
-                        </div>
+            <!-- Announcements -->
+            <div class="card" id="postsTopCard">
+                <div class="card-head">
+                    <div>
+                        <div class="card-eyebrow">📢 Announcements</div>
+                        <div class="card-title display" style="margin-bottom:0;">Latest</div>
                     </div>
-                    <div id="todayView"></div>
-                    <div id="weekView" style="display:none;"></div>
-                    <div id="imageView" style="display:none;">
-                        <div style="overflow-x:auto; border-radius:10px; border:1px solid var(--paper-line);">
-                            <canvas id="ttCanvas"></canvas>
-                        </div>
-                        <button class="btn-primary" style="margin-top:14px;" onclick="downloadTimetableImage()">Download PNG</button>
-                    </div>
+                    <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="renderPostsFeed(true)">View all</button>
                 </div>
+                <div id="postsFeedContent"></div>
             </div>
 
-            <div>
-                <div class="card">
-                    <div class="card-eyebrow">Semester so far</div>
-                    <div class="card-title display" style="margin-bottom:16px;">Attendance</div>
-                    <div class="target-row">
-                        <label>Target attendance</label>
-                        <select id="targetPct" onchange="renderAttendanceStats()">
-                            <option value="75" selected>75%</option>
-                            <option value="80">80%</option>
-                            <option value="90">90%</option>
-                        </select>
-                    </div>
-                    <div class="overall-ring-wrap">
-                        <div>
-                            <div class="overall-num" id="overallPct">—</div>
-                            <div class="overall-sub">overall, this semester</div>
+            <!-- Main grid -->
+            <div class="shell-grid">
+                <div>
+                    <div class="card">
+                        <div class="card-head">
+                            <div>
+                                <div class="card-eyebrow">Bell schedule</div>
+                                <div class="card-title display">Today's periods</div>
+                            </div>
+                            <div class="tabbar">
+                                <button class="tab-btn active" id="tabToday" onclick="setScheduleView('today')">Today</button>
+                                <button class="tab-btn" id="tabWeek" onclick="setScheduleView('week')">Full week</button>
+                                <button class="tab-btn" id="tabImage" onclick="setScheduleView('image')">Image</button>
+                            </div>
                         </div>
-                        <div style="font-size:12px;color:var(--ink-soft);line-height:1.6;" id="overallCounts">—</div>
+                        <div id="todayView"></div>
+                        <div id="weekView" style="display:none;"></div>
+                        <div id="imageView" style="display:none;">
+                            <div style="overflow-x:auto; border-radius:10px; border:1px solid var(--paper-line);">
+                                <canvas id="ttCanvas"></canvas>
+                            </div>
+                            <button class="btn-primary" style="margin-top:14px;" onclick="downloadTimetableImage()">Download PNG</button>
+                        </div>
                     </div>
-                    <div class="overall-leave" id="overallLeave"></div>
-                    <div id="subjectStats"></div>
                 </div>
 
-                <!-- Attendance History Card -->
-                <div class="card" id="historyCard">
-                    <div class="card-eyebrow">📋 Past &amp; future</div>
-                    <div class="card-title display" style="margin-bottom:12px;">Attendance History</div>
-                    <div class="history-nav">
-                        <button class="nav-btn" id="histPrev" onclick="navigateHistoryDate(-1)" title="Previous day">‹</button>
-                        <span class="date-display" id="histDateDisplay">—</span>
-                        <button class="nav-btn" id="histNext" onclick="navigateHistoryDate(1)" title="Next day">›</button>
-                        <button class="nav-btn today-btn" onclick="goToTodayHistory()">Today</button>
+                <div>
+                    <div class="card">
+                        <div class="card-eyebrow">Semester so far</div>
+                        <div class="card-title display" style="margin-bottom:16px;">Attendance</div>
+                        <div class="target-row">
+                            <label>Target attendance</label>
+                            <select id="targetPct" onchange="renderAttendanceStats()">
+                                <option value="75" selected>75%</option>
+                                <option value="80">80%</option>
+                                <option value="90">90%</option>
+                            </select>
+                        </div>
+                        <div class="overall-ring-wrap">
+                            <div>
+                                <div class="overall-num" id="overallPct">—</div>
+                                <div class="overall-sub">overall, this semester</div>
+                            </div>
+                            <div style="font-size:12px;color:var(--ink-soft);line-height:1.6;" id="overallCounts">—</div>
+                        </div>
+                        <div class="overall-leave" id="overallLeave"></div>
+                        <div id="subjectStats"></div>
                     </div>
-                    <div id="historyView"></div>
-                </div>
 
-                <div class="card">
-                    <div class="card-eyebrow">Quick Resources</div>
-                    <div class="card-title display" style="margin-bottom:16px;">MMMUT Links</div>
-                    <button class="btn-primary" onclick="window.open('https://drive.google.com/file/d/1mHw1emQ9i92HIoq7jw6YWKGpPnFV7wMO/view?usp=drivesdk','_blank')">📅 Time Table PDF</button>
-                    <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://share.google/uOrpx8BFFizpBu9C2','_blank')">📢 MMMUT Notices</button>
-                    <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://drive.google.com/file/d/1vENgYXFOKl-1O6eAALAfBYHR95a8b8EX/view?usp=drivesdk','_blank')">📖 Academic Calendar</button>
-                </div>
+                    <!-- Attendance History -->
+                    <div class="card" id="historyCard">
+                        <div class="card-eyebrow">📋 Past &amp; future</div>
+                        <div class="card-title display" style="margin-bottom:12px;">Attendance History</div>
+                        <div class="history-nav">
+                            <button class="nav-btn" id="histPrev" onclick="navigateHistoryDate(-1)" title="Previous day">‹</button>
+                            <span class="date-display" id="histDateDisplay">—</span>
+                            <button class="nav-btn" id="histNext" onclick="navigateHistoryDate(1)" title="Next day">›</button>
+                            <button class="nav-btn today-btn" onclick="goToTodayHistory()">Today</button>
+                        </div>
+                        <div id="historyView"></div>
+                    </div>
 
-                <div class="card">
-                    <div class="card-eyebrow">Academic calendar 2026–27</div>
-                    <div class="card-title display" style="margin-bottom:14px;">Upcoming</div>
-                    <div id="eventsList"></div>
+                    <!-- ===== HELP & FEEDBACK CARD ===== -->
+                    <div class="card feedback-highlight" id="feedbackCard">
+                        <div class="card-head">
+                            <div>
+                                <div class="card-eyebrow">💬 Help &amp; Feedback</div>
+                                <div class="card-title display" style="margin-bottom:0;">Get Support</div>
+                            </div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <button class="btn-primary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openFeedbackForm()">➕ New</button>
+                                <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openMyFeedback()">📋 My Feedback</button>
+                                <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openRatingModal()">⭐ Rate ERP</button>
+                            </div>
+                        </div>
+                        <div id="feedbackPreviewContent" style="font-size:13px;color:var(--ink-soft);">
+                            <div style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 0;">
+                                <span>📌 <span id="fbTotalCount">0</span> total</span>
+                                <span>🟡 <span id="fbOpenCount">0</span> open</span>
+                                <span>🟢 <span id="fbResolvedCount">0</span> resolved</span>
+                                <span style="cursor:pointer;color:var(--teal);font-weight:600;" onclick="openMyFeedback()">View all →</span>
+                            </div>
+                            <div id="fbLatestPreview" style="margin-top:6px;font-size:12px;color:var(--ink-soft);">No feedback yet.</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-eyebrow">Quick Resources</div>
+                        <div class="card-title display" style="margin-bottom:16px;">MMMUT Links</div>
+                        <button class="btn-primary" onclick="window.open('https://drive.google.com/file/d/1mHw1emQ9i92HIoq7jw6YWKGpPnFV7wMO/view?usp=drivesdk','_blank')">📅 Time Table PDF</button>
+                        <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://share.google/uOrpx8BFFizpBu9C2','_blank')">📢 MMMUT Notices</button>
+                        <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://drive.google.com/file/d/1vENgYXFOKl-1O6eAALAfBYHR95a8b8EX/view?usp=drivesdk','_blank')">📖 Academic Calendar</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-eyebrow">Academic calendar 2026–27</div>
+                        <div class="card-title display" style="margin-bottom:14px;">Upcoming</div>
+                        <div id="eventsList"></div>
+                    </div>
                 </div>
             </div>
         </div>
         <footer class="app-foot">M.M.M. University of Technology, Gorakhpur — Session 2026–27</footer>
+    </div>
+
+    <!-- ===== FEEDBACK FORM OVERLAY ===== -->
+    <div class="feedback-overlay" id="feedbackFormOverlay">
+        <div class="feedback-panel">
+            <div class="feedback-panel-header">
+                <h2>💬 Submit Feedback</h2>
+                <button class="close-btn" onclick="closeFeedbackForm()">✕</button>
+            </div>
+            <div class="feedback-panel-body">
+                <form id="feedbackForm" onsubmit="submitFeedback(event)">
+                    <div class="field">
+                        <label>Category</label>
+                        <select id="fbCategory" required>
+                            <option value="">Select a category…</option>
+                            <option value="bug">🐞 Bug Report</option>
+                            <option value="feature">💡 Feature Suggestion</option>
+                            <option value="timetable">📅 Timetable Issue</option>
+                            <option value="calendar">📚 Academic Calendar Issue</option>
+                            <option value="notice">📢 Notice Issue</option>
+                            <option value="help">❓ Need Help</option>
+                            <option value="general">📝 General Feedback</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Subject <span style="font-weight:400;color:var(--ink-soft);">(max 100 chars)</span></label>
+                        <input id="fbSubject" placeholder="Brief subject line" maxlength="100" required />
+                    </div>
+                    <div class="field">
+                        <label>Description <span style="font-weight:400;color:var(--ink-soft);">(20–2000 chars)</span></label>
+                        <textarea id="fbMessage" placeholder="Describe your issue or suggestion in detail…" rows="4" required></textarea>
+                        <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;" id="fbCharCount">0 / 2000</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label>Priority</label>
+                            <select id="fbPriority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label>Screenshot <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
+                            <input type="file" id="fbScreenshot" accept="image/*" />
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                        <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;margin:0;">Submit Feedback</button>
+                        <button type="button" class="btn-secondary" style="margin:0;" onclick="closeFeedbackForm()">Cancel</button>
+                    </div>
+                    <div id="fbFormError" style="margin-top:12px;font-size:13px;color:var(--brick);display:none;"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MY FEEDBACK OVERLAY ===== -->
+    <div class="feedback-overlay" id="myFeedbackOverlay">
+        <div class="feedback-panel" style="max-width:720px;">
+            <div class="feedback-panel-header">
+                <h2>📋 My Feedback</h2>
+                <button class="close-btn" onclick="closeMyFeedback()">✕</button>
+            </div>
+            <div class="feedback-panel-body" id="myFeedbackBody">
+                <div style="text-align:center;padding:32px 0;color:var(--ink-soft);">Loading…</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== RATING MODAL ===== -->
+    <div class="feedback-overlay" id="ratingModal">
+        <div class="feedback-panel" style="max-width:480px;">
+            <div class="feedback-panel-header">
+                <h2>⭐ Rate ERP</h2>
+                <button class="close-btn" onclick="closeRatingModal()">✕</button>
+            </div>
+            <div class="feedback-panel-body">
+                <p style="font-size:14px;color:var(--ink-soft);margin-bottom:12px;">How would you rate your experience with The Ledger?</p>
+                <div class="feedback-rating-stars" id="ratingStars">
+                    <span data-val="1" class="star-off">★</span>
+                    <span data-val="2" class="star-off">★</span>
+                    <span data-val="3" class="star-off">★</span>
+                    <span data-val="4" class="star-off">★</span>
+                    <span data-val="5" class="star-off">★</span>
+                </div>
+                <div class="field" style="margin-top:12px;">
+                    <label>Comment <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
+                    <textarea id="ratingComment" placeholder="Share your thoughts…" rows="3"></textarea>
+                </div>
+                <button class="btn-primary" style="width:auto;padding:12px 32px;margin-top:4px;" onclick="submitRating()">Submit Rating</button>
+                <div id="ratingFormError" style="margin-top:12px;font-size:13px;color:var(--brick);display:none;"></div>
+                <div id="ratingExisting" style="margin-top:14px;font-size:13px;color:var(--ink-soft);display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="profile-overlay" id="profileModal">
+        <div class="profile-panel">
+            <button class="close-btn" onclick="closeProfileModal()">✕</button>
+            <h2>Edit Profile &amp; Security</h2>
+            <div class="field">
+                <label>Name</label>
+                <input id="profileName" disabled style="background:var(--paper);" />
+            </div>
+            <div class="field">
+                <label>Username</label>
+                <input id="profileUsername" disabled style="background:var(--paper);" />
+            </div>
+            <div class="field">
+                <label>Branch</label>
+                <input id="profileBranch" disabled style="background:var(--paper);" />
+            </div>
+            <div class="field">
+                <label>Section</label>
+                <select id="profileSection"></select>
+            </div>
+            <button class="btn-primary" onclick="saveProfile()">Save Section</button>
+
+            <hr />
+
+            <div class="field">
+                <label>Current Password</label>
+                <input id="profileOldPassword" type="password" placeholder="Enter current password" />
+            </div>
+            <div class="field">
+                <label>New Password</label>
+                <input id="profileNewPassword" type="password" placeholder="New password (min 6 characters)" />
+            </div>
+            <div class="field">
+                <label>Confirm New Password</label>
+                <input id="profileConfirmPassword" type="password" placeholder="Confirm new password" />
+            </div>
+            <button class="btn-primary" onclick="changePassword()" style="margin-top:0;">Change Password</button>
+        </div>
     </div>
 
     <div class="admin-overlay" id="adminPanel">
@@ -1467,19 +2177,42 @@
             </div>
             <div class="admin-tabs" id="adminTabs">
                 <button class="admin-tab active" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 Dashboard</button>
+                <button class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">👥 Users</button>
                 <button class="admin-tab" data-tab="timetable" onclick="switchAdminTab('timetable')">📅 Timetable</button>
                 <button class="admin-tab" data-tab="calendar" onclick="switchAdminTab('calendar')">📆 Calendar</button>
                 <button class="admin-tab" data-tab="holidays" onclick="switchAdminTab('holidays')">🏖️ Holidays</button>
                 <button class="admin-tab" data-tab="posts" onclick="switchAdminTab('posts')">📢 Announcements</button>
                 <button class="admin-tab" data-tab="requests" onclick="switchAdminTab('requests')">👥 Admin Requests</button>
+                <button class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback')">💬 Feedback</button>
             </div>
             <div class="admin-panel-body" id="adminBody">
                 <div class="tab-content active" id="tab-dashboard"><div id="adminDashboardContent">Loading dashboard…</div></div>
+                <div class="tab-content" id="tab-users"><div id="adminUsersContent">Loading users…</div></div>
                 <div class="tab-content" id="tab-timetable"><div id="adminTimetableContent">Loading timetable editor…</div></div>
                 <div class="tab-content" id="tab-calendar"><div id="adminCalendarContent">Loading calendar editor…</div></div>
                 <div class="tab-content" id="tab-holidays"><div id="adminHolidaysContent">Loading holidays…</div></div>
                 <div class="tab-content" id="tab-posts"><div id="adminPostsContent">Loading announcements…</div></div>
                 <div class="tab-content" id="tab-requests"><div id="adminRequestsContent">Loading requests…</div></div>
+                <div class="tab-content" id="tab-feedback"><div id="adminFeedbackContent">Loading feedback…</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN REPLY MODAL (inline) ===== -->
+    <div class="feedback-overlay" id="adminReplyModal">
+        <div class="feedback-panel" style="max-width:540px;">
+            <div class="feedback-panel-header">
+                <h2>💬 Reply to Feedback</h2>
+                <button class="close-btn" onclick="closeAdminReplyModal()">✕</button>
+            </div>
+            <div class="feedback-panel-body fb-reply-modal">
+                <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;" id="replyTicketInfo">Ticket: —</div>
+                <textarea class="reply-textarea" id="adminReplyText" placeholder="Type your reply…"></textarea>
+                <div class="reply-actions">
+                    <button class="btn-primary" style="width:auto;padding:10px 28px;margin:0;" onclick="submitAdminReply()">Send Reply</button>
+                    <button class="btn-secondary" style="margin:0;" onclick="closeAdminReplyModal()">Cancel</button>
+                </div>
+                <div id="adminReplyError" style="margin-top:10px;font-size:13px;color:var(--brick);display:none;"></div>
             </div>
         </div>
     </div>
@@ -1491,7 +2224,10 @@
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             onAuthStateChanged,
-            signOut
+            signOut,
+            reauthenticateWithCredential,
+            updatePassword,
+            EmailAuthProvider
         } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
         import {
             getFirestore,
@@ -1507,8 +2243,19 @@
             serverTimestamp,
             addDoc,
             onSnapshot,
-            limit
+            limit,
+            orderBy,
+            startAfter,
+            getCountFromServer,
+            Timestamp
         } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+        import {
+            getStorage,
+            ref,
+            uploadBytes,
+            getDownloadURL,
+            deleteObject
+        } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDMLvLIZkPFO5nsVQBr2IA-8BRB5Hzb3Xo",
@@ -1523,6 +2270,7 @@
         const firebaseApp = initializeApp(firebaseConfig);
         const auth = getAuth(firebaseApp);
         const db = getFirestore(firebaseApp);
+        const storage = getStorage(firebaseApp);
         const usersCollection = collection(db, "users");
         const attendanceCollection = collection(db, "attendance");
         const adminRequestsCollection = collection(db, "adminRequests");
@@ -1530,6 +2278,8 @@
         const eventOverridesCollection = collection(db, "eventOverrides");
         const timetableOverridesCollection = collection(db, "timetableOverrides");
         const holidaysCollection = collection(db, "holidays");
+        const feedbackCollection = collection(db, "feedback");
+        const ratingsCollection = collection(db, "ratings");
 
         // ========== DATA ==========
         const PERIODS = [
@@ -2677,7 +3427,9 @@
         let isAdmin = false;
         let adminRequested = false;
         let historyDate = new Date();
-        let holidays = new Set(); // set of date strings
+        let holidays = new Set();
+        let allPosts = [];
+        let lastReadPosts = 0;
 
         // ========== TOAST ==========
         function showToast(msg, duration = 3000) {
@@ -2708,6 +3460,80 @@
                     renderAttendanceStats();
                 }
             });
+        }
+
+        // ========== PROFILE MODAL ==========
+        function openProfileModal() {
+            if (!currentUser) return;
+            const branch = getBranch(currentUser.branchId);
+            document.getElementById('profileName').value = currentUser.name;
+            document.getElementById('profileUsername').value = currentUser.username;
+            document.getElementById('profileBranch').value = branch.name;
+            const sel = document.getElementById('profileSection');
+            sel.innerHTML = branch.sections.map(s => `<option value="${s}" ${s===currentUser.section?'selected':''}>${s}</option>`).join('');
+            document.getElementById('profileOldPassword').value = '';
+            document.getElementById('profileNewPassword').value = '';
+            document.getElementById('profileConfirmPassword').value = '';
+            document.getElementById('profileModal').classList.add('open');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('open');
+        }
+
+        async function saveProfile() {
+            const newSection = document.getElementById('profileSection').value;
+            if (newSection === currentUser.section) {
+                showToast('No change made.');
+                closeProfileModal();
+                return;
+            }
+            try {
+                await updateDoc(doc(usersCollection, currentUid), { section: newSection });
+                currentUser.section = newSection;
+                const branch = getBranch(currentUser.branchId);
+                scheduleCache = buildSchedule(branch, newSection);
+                renderSchedule();
+                renderHistoryView();
+                renderAttendanceStats();
+                document.getElementById('pillBranch').textContent = branch.name.replace('B.Tech — ', '') + ' · Sec ' + newSection;
+                showToast('Profile updated!');
+                closeProfileModal();
+            } catch (e) {
+                showToast('Error updating profile: ' + e.message);
+            }
+        }
+
+        // ========== CHANGE PASSWORD ==========
+        async function changePassword() {
+            const oldPw = document.getElementById('profileOldPassword').value;
+            const newPw = document.getElementById('profileNewPassword').value;
+            const confirmPw = document.getElementById('profileConfirmPassword').value;
+            if (!oldPw) { showToast('Please enter your current password.'); return; }
+            if (!newPw || newPw.length < 6) { showToast('New password must be at least 6 characters.'); return; }
+            if (newPw !== confirmPw) { showToast('New passwords do not match.'); return; }
+
+            try {
+                const user = auth.currentUser;
+                if (!user) { showToast('You are not logged in.'); return; }
+                const credential = EmailAuthProvider.credential(user.email, oldPw);
+                await reauthenticateWithCredential(user, credential);
+                await updatePassword(user, newPw);
+                showToast('Password changed successfully!');
+                document.getElementById('profileOldPassword').value = '';
+                document.getElementById('profileNewPassword').value = '';
+                document.getElementById('profileConfirmPassword').value = '';
+                closeProfileModal();
+            } catch (e) {
+                console.error(e);
+                if (e.code === 'auth/wrong-password') {
+                    showToast('Incorrect current password.');
+                } else if (e.code === 'auth/weak-password') {
+                    showToast('New password is too weak. Use at least 6 characters.');
+                } else {
+                    showToast('Error changing password: ' + e.message);
+                }
+            }
         }
 
         // ========== AUTH UI ==========
@@ -2766,7 +3592,8 @@
                     section,
                     isAdmin: isAdminFlag,
                     adminRequested: false,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    lastReadPosts: 0
                 };
                 await setDoc(doc(usersCollection, credential.user.uid), record, { merge: true });
                 try { await setDoc(doc(attendanceCollection, credential.user.uid), { attendance: {} }); } catch (e) {}
@@ -2808,6 +3635,11 @@
             document.getElementById('loginUsername').value = '';
             document.getElementById('loginPassword').value = '';
             closeAdminPanel();
+            closeProfileModal();
+            closeFeedbackForm();
+            closeMyFeedback();
+            closeRatingModal();
+            closeAdminReplyModal();
         }
 
         async function loadUserProfile(uid) {
@@ -2821,6 +3653,7 @@
                 section: data.section,
                 isAdmin: data.isAdmin || false,
                 adminRequested: data.adminRequested || false,
+                lastReadPosts: data.lastReadPosts || 0
             };
         }
 
@@ -2854,6 +3687,7 @@
             currentUser = record;
             isAdmin = record.isAdmin || false;
             adminRequested = record.adminRequested || false;
+            lastReadPosts = record.lastReadPosts || 0;
 
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
@@ -2891,21 +3725,47 @@
                 topRight.appendChild(btn);
             }
 
-            // Download app button is already in the topbar as an <a> element
-
             scheduleCache = buildSchedule(branch, record.section);
             renderTopbarDate();
             renderSchedule();
             renderEvents();
             await renderAttendanceStats();
             renderPostsFeed();
-            // Init history view
             historyDate = new Date();
             renderHistoryView();
 
-            // Listen to holidays
             if (window._holidaysUnsub) window._holidaysUnsub();
             window._holidaysUnsub = listenHolidays();
+
+            if (window._postsUnsub) window._postsUnsub();
+            window._postsUnsub = onSnapshot(query(postsCollection, orderBy('createdAt', 'desc')), (snap) => {
+                allPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                updateNotificationBadge();
+                if (document.getElementById('postsFeedContent')) {
+                    renderPostsFeed();
+                }
+            });
+
+            // Listen to feedback for notifications
+            if (window._feedbackUnsub) window._feedbackUnsub();
+            window._feedbackUnsub = onSnapshot(
+                query(feedbackCollection, where('uid', '==', currentUid), orderBy('createdAt', 'desc')),
+                (snap) => {
+                    if (document.getElementById('feedbackPreviewContent')) {
+                        renderFeedbackPreview();
+                    }
+                    // Check for new replies
+                    snap.docChanges().forEach(change => {
+                        if (change.type === 'modified') {
+                            const data = change.doc.data();
+                            if (data.adminReply && data.adminReply !== data._prevReply) {
+                                showToast('💬 Your feedback has received a reply.');
+                            }
+                            data._prevReply = data.adminReply;
+                        }
+                    });
+                }
+            );
 
             if (currentUid) {
                 const unsub = onSnapshot(doc(usersCollection, currentUid), (snap) => {
@@ -2913,6 +3773,8 @@
                         const data = snap.data();
                         isAdmin = data.isAdmin || false;
                         adminRequested = data.adminRequested || false;
+                        if (data.lastReadPosts !== undefined) lastReadPosts = data.lastReadPosts;
+                        updateNotificationBadge();
                         const btn2 = document.querySelector('.topbar-right .btn-admin, .topbar-right .btn-request-admin');
                         if (btn2) btn2.remove();
                         const b = document.createElement('button');
@@ -2939,6 +3801,46 @@
                     }
                 });
                 window._adminUnsub = unsub;
+            }
+
+            setTimeout(updateNotificationBadge, 500);
+            // Load feedback preview
+            renderFeedbackPreview();
+            // Load rating
+            loadExistingRating();
+        }
+
+        // ========== NOTIFICATION ==========
+        function updateNotificationBadge() {
+            const badge = document.getElementById('notifBadge');
+            if (!badge) return;
+            const unread = allPosts.filter(p => {
+                const ts = p.createdAt?.seconds || 0;
+                return ts > lastReadPosts;
+            }).length;
+            if (unread > 0) {
+                badge.style.display = 'inline';
+                badge.textContent = unread > 99 ? '99+' : unread;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function markPostsRead() {
+            if (!currentUid) return;
+            const now = Date.now() / 1000;
+            try {
+                await updateDoc(doc(usersCollection, currentUid), { lastReadPosts: now });
+                lastReadPosts = now;
+                updateNotificationBadge();
+            } catch (e) {}
+        }
+
+        function scrollToPosts() {
+            const card = document.getElementById('postsTopCard');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(markPostsRead, 1000);
             }
         }
 
@@ -3006,11 +3908,13 @@
                 t.classList.toggle('active', t.id === 'tab-' + tab);
             });
             if (tab === 'dashboard') renderAdminDashboard();
+            if (tab === 'users') renderAdminUsers();
             if (tab === 'timetable') renderAdminTimetable();
             if (tab === 'calendar') renderAdminCalendar();
             if (tab === 'holidays') renderAdminHolidays();
             if (tab === 'posts') renderAdminPosts();
             if (tab === 'requests') renderAdminRequests();
+            if (tab === 'feedback') renderAdminFeedback();
         }
 
         // ========== ADMIN: DASHBOARD ==========
@@ -3026,6 +3930,8 @@
                 const totalPosts = postsSnap.size;
                 const holidaysSnap = await getDocs(holidaysCollection);
                 const totalHolidays = holidaysSnap.size;
+                const fbSnap = await getDocs(feedbackCollection);
+                const totalFeedback = fbSnap.size;
                 el.innerHTML = `
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;">
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalUsers}</div><div style="font-size:12px;color:var(--ink-soft);">Total Users</div></div>
@@ -3033,11 +3939,46 @@
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${pendingRequests}</div><div style="font-size:12px;color:var(--ink-soft);">Pending Admin Requests</div></div>
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalPosts}</div><div style="font-size:12px;color:var(--ink-soft);">Announcements</div></div>
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalHolidays}</div><div style="font-size:12px;color:var(--ink-soft);">Holidays</div></div>
+                <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalFeedback}</div><div style="font-size:12px;color:var(--ink-soft);">Feedback Tickets</div></div>
               </div>
-              <div style="font-size:13px;color:var(--ink-soft);">Welcome to the admin panel. Use the tabs above to manage timetable, calendar, holidays, announcements, and admin requests.</div>
+              <div style="font-size:13px;color:var(--ink-soft);">Welcome to the admin panel. Use the tabs above to manage users, timetable, calendar, holidays, announcements, admin requests, and feedback.</div>
             `;
             } catch (e) {
                 el.innerHTML = `<div class="empty-note">Error loading dashboard: ${e.message}</div>`;
+            }
+        }
+
+        // ========== ADMIN: USERS ==========
+        async function renderAdminUsers() {
+            const el = document.getElementById('adminUsersContent');
+            try {
+                const snap = await getDocs(usersCollection);
+                const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                let html = `
+              <div style="overflow-x:auto;max-height:500px;overflow-y:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                  <thead style="background:var(--ink);color:#F1ECDD;position:sticky;top:0;">
+                    <tr><th style="padding:10px 8px;text-align:left;">Name</th><th style="padding:10px 8px;text-align:left;">Username</th><th style="padding:10px 8px;text-align:left;">Branch</th><th style="padding:10px 8px;text-align:left;">Section</th><th style="padding:10px 8px;text-align:left;">Admin</th><th style="padding:10px 8px;text-align:left;">Requested</th></tr>
+                  </thead>
+                  <tbody>
+            `;
+                users.forEach(u => {
+                    const branch = getBranch(u.branchId);
+                    html += `
+                <tr style="border-bottom:1px solid var(--paper-line);">
+                  <td style="padding:8px;">${u.name || '—'}</td>
+                  <td style="padding:8px;">${u.username || '—'}</td>
+                  <td style="padding:8px;">${branch ? branch.name : u.branchId}</td>
+                  <td style="padding:8px;">${u.section || '—'}</td>
+                  <td style="padding:8px;">${u.isAdmin ? '✅' : '—'}</td>
+                  <td style="padding:8px;">${u.adminRequested ? '⏳' : '—'}</td>
+                </tr>
+              `;
+                });
+                html += `</tbody></table></div>`;
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = `<div class="empty-note">Error loading users: ${e.message}</div>`;
             }
         }
 
@@ -3474,58 +4415,36 @@
         window.rejectAdminRequest = rejectAdminRequest;
 
         // ========== RENDER: Posts Feed ==========
-        async function renderPostsFeed() {
-            const shell = document.querySelector('.shell');
-            let postsCard = document.getElementById('postsFeedCard');
-            if (!postsCard) {
-                const rightCol = shell.querySelector('.shell > div:last-child');
-                if (!rightCol) return;
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.id = 'postsFeedCard';
-                card.innerHTML = `
-              <div class="card-eyebrow">Announcements</div>
-              <div class="card-title display" style="margin-bottom:14px;">Latest</div>
-              <div id="postsFeedContent"></div>
-            `;
-                const eventsCard = rightCol.querySelector('.card:last-child');
-                if (eventsCard) { rightCol.insertBefore(card, eventsCard); } else { rightCol.appendChild(card); }
-                postsCard = card;
-            }
+        async function renderPostsFeed(viewAll = false) {
             const content = document.getElementById('postsFeedContent');
-            try {
-                const snap = await getDocs(postsCollection);
-                let posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                posts.sort((a, b) => {
-                    if (a.pinned && !b.pinned) return -1;
-                    if (!a.pinned && b.pinned) return 1;
-                    const da = a.createdAt?.seconds || 0;
-                    const db = b.createdAt?.seconds || 0;
-                    return db - da;
-                });
+            if (!content) return;
+            let posts = allPosts.slice();
+            if (!viewAll) {
                 posts = posts.slice(0, 5);
-                if (posts.length === 0) {
-                    content.innerHTML = `<div class="empty-note">No announcements yet.</div>`;
-                    return;
-                }
-                let html = '';
-                posts.forEach(p => {
-                    const date = p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString(
-                        'en-IN', { day: 'numeric', month: 'short' }) : '—';
-                    html += `
-                <div class="post-item ${p.pinned ? 'pinned' : ''}" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--paper-line);">
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span class="post-title" style="font-size:13px;font-weight:600;">${p.title} ${p.pinned ? '📌' : ''}</span>
-                    <span style="font-size:10px;color:var(--ink-soft);">${date}</span>
-                  </div>
-                  <div class="post-content" style="font-size:12px;margin-top:2px;color:var(--ink-soft);">${p.content}</div>
-                </div>
-              `;
-                });
-                content.innerHTML = html;
-            } catch (e) {
-                content.innerHTML = `<div class="empty-note">Could not load announcements.</div>`;
             }
+            if (posts.length === 0) {
+                content.innerHTML = `<div class="empty-note">No announcements yet.</div>`;
+                return;
+            }
+            let html = '';
+            posts.forEach(p => {
+                const date = p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString(
+                    'en-IN', { day: 'numeric', month: 'short' }) : '—';
+                html += `
+              <div class="post-item ${p.pinned ? 'pinned' : ''}" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--paper-line);">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="post-title" style="font-size:13px;font-weight:600;">${p.title} ${p.pinned ? '📌' : ''}</span>
+                  <span style="font-size:10px;color:var(--ink-soft);">${date}</span>
+                </div>
+                <div class="post-content" style="font-size:12px;margin-top:2px;color:var(--ink-soft);">${p.content}</div>
+              </div>
+            `;
+            });
+            if (!viewAll && allPosts.length > 5) {
+                html +=
+                    `<div style="text-align:right;margin-top:8px;"><button class="btn-secondary" style="padding:4px 12px;font-size:11px;margin:0;" onclick="renderPostsFeed(true)">View all ${allPosts.length} →</button></div>`;
+            }
+            content.innerHTML = html;
         }
 
         // ========== RENDER: Schedule ==========
@@ -3592,7 +4511,6 @@
             renderHistoryView();
         }
 
-        // ---- mark for a specific date ----
         async function markAttendanceForDate(periodKey, subjectCode, status, dateStr) {
             const map = await getAttendanceMap();
             if (holidays.has(dateStr)) {
@@ -3693,7 +4611,7 @@
             weekView.innerHTML = wh;
         }
 
-        // ========== RENDER: Attendance Stats (exclude holidays) ==========
+        // ========== RENDER: Attendance Stats ==========
         async function renderAttendanceStats() {
             const branch = getBranch(currentUser.branchId);
             const map = await getAttendanceMap();
@@ -3701,7 +4619,7 @@
             const counts = {};
             branch.subjects.forEach(s => counts[s.code] = { present: 0, absent: 0, name: s.name });
             Object.keys(map).forEach(dateStr => {
-                if (holidays.has(dateStr)) return; // skip holidays
+                if (holidays.has(dateStr)) return;
                 const dayMap = map[dateStr];
                 Object.entries(dayMap).forEach(([cellKey, status]) => {
                     const code = cellKey.split('::')[1];
@@ -3951,7 +4869,6 @@
             const map = await getAttendanceMap();
             const dayMarks = map[dateStr] || {};
 
-            // check if it's a weekday or holiday
             const dayIdx = dateObj.getDay();
             const isWeekend = dayIdx === 0 || dayIdx === 6;
             const dayKey = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayIdx];
@@ -3979,7 +4896,6 @@
             }
 
             let schedule = scheduleCache;
-            // apply overrides
             if (currentUser && currentUser.branchId) {
                 try {
                     const q = query(timetableOverridesCollection,
@@ -4002,7 +4918,6 @@
                 return;
             }
 
-            // Build the rail for this day
             let html = `<div class="rail" style="margin-top:4px;">`;
             let presentCount = 0,
                 absentCount = 0;
@@ -4038,7 +4953,6 @@
             });
             html += `</div>`;
 
-            // summary
             const totalMarked = presentCount + absentCount;
             html += `
             <div class="history-summary">
@@ -4049,7 +4963,6 @@
             </div>
           `;
 
-            // If future date, show a small note
             const todayStr = dateKey(new Date());
             if (dateStr > todayStr) {
                 html +=
@@ -4057,6 +4970,612 @@
             }
 
             container.innerHTML = html;
+        }
+
+        // ============================================================
+        // ========== FEEDBACK SYSTEM ==================================
+        // ============================================================
+
+        // Generate ticket ID: FB-2026-000001
+        function generateTicketId() {
+            const year = new Date().getFullYear();
+            const random = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+            return `FB-${year}-${random}`;
+        }
+
+        // Check rate limit: 5 per day per user
+        async function checkRateLimit(uid) {
+            const today = dateKey(new Date());
+            const q = query(
+                feedbackCollection,
+                where('uid', '==', uid),
+                where('createdAtDate', '==', today)
+            );
+            const snap = await getDocs(q);
+            return snap.size < 5;
+        }
+
+        // Open feedback form
+        function openFeedbackForm() {
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            document.getElementById('feedbackFormOverlay').classList.add('open');
+            document.getElementById('fbFormError').style.display = 'none';
+            document.getElementById('fbCategory').value = '';
+            document.getElementById('fbSubject').value = '';
+            document.getElementById('fbMessage').value = '';
+            document.getElementById('fbPriority').value = 'medium';
+            document.getElementById('fbScreenshot').value = '';
+            document.getElementById('fbCharCount').textContent = '0 / 2000';
+        }
+
+        function closeFeedbackForm() {
+            document.getElementById('feedbackFormOverlay').classList.remove('open');
+        }
+
+        // Char counter
+        document.addEventListener('DOMContentLoaded', () => {
+            const msg = document.getElementById('fbMessage');
+            if (msg) {
+                msg.addEventListener('input', () => {
+                    document.getElementById('fbCharCount').textContent = msg.value.length + ' / 2000';
+                });
+            }
+        });
+
+        // Submit feedback
+        async function submitFeedback(e) {
+            e.preventDefault();
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            const errorEl = document.getElementById('fbFormError');
+            errorEl.style.display = 'none';
+
+            const category = document.getElementById('fbCategory').value;
+            const subject = document.getElementById('fbSubject').value.trim();
+            const message = document.getElementById('fbMessage').value.trim();
+            const priority = document.getElementById('fbPriority').value;
+            const fileInput = document.getElementById('fbScreenshot');
+
+            if (!category) { errorEl.textContent = 'Please select a category.';
+                errorEl.style.display = 'block'; return; }
+            if (!subject || subject.length > 100) { errorEl.textContent =
+                    'Subject is required and must be 100 characters or less.';
+                errorEl.style.display = 'block'; return; }
+            if (message.length < 20 || message.length > 2000) { errorEl.textContent =
+                    'Description must be between 20 and 2000 characters.';
+                errorEl.style.display = 'block'; return; }
+
+            // Rate limit
+            const ok = await checkRateLimit(currentUid);
+            if (!ok) { errorEl.textContent = 'Daily feedback limit reached (5 per day).';
+                errorEl.style.display = 'block'; return; }
+
+            // Upload screenshot if any
+            let attachmentUrl = null;
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const path = `feedback/${currentUid}/${Date.now()}_${file.name}`;
+                const storageRef = ref(storage, path);
+                try {
+                    await uploadBytes(storageRef, file);
+                    attachmentUrl = await getDownloadURL(storageRef);
+                } catch (err) {
+                    errorEl.textContent = 'Failed to upload screenshot: ' + err.message;
+                    errorEl.style.display = 'block';
+                    return;
+                }
+            }
+
+            const ticketId = generateTicketId();
+            const today = dateKey(new Date());
+
+            try {
+                await addDoc(feedbackCollection, {
+                    uid: currentUid,
+                    username: currentUser.username,
+                    name: currentUser.name,
+                    branch: currentUser.branchId,
+                    section: currentUser.section,
+                    category,
+                    subject,
+                    message,
+                    priority,
+                    status: 'open',
+                    attachment: attachmentUrl,
+                    ticketId,
+                    createdAtDate: today,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    adminReply: null,
+                    adminReplyAt: null,
+                    repliedBy: null
+                });
+                showToast('✅ Feedback submitted! Ticket: ' + ticketId);
+                closeFeedbackForm();
+                renderFeedbackPreview();
+                if (isAdmin) renderAdminFeedback();
+            } catch (err) {
+                errorEl.textContent = 'Error submitting feedback: ' + err.message;
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // Preview on dashboard card
+        async function renderFeedbackPreview() {
+            if (!currentUser) return;
+            const previewEl = document.getElementById('feedbackPreviewContent');
+            if (!previewEl) return;
+            try {
+                const q = query(feedbackCollection, where('uid', '==', currentUid), orderBy('createdAt', 'desc'), limit(3));
+                const snap = await getDocs(q);
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Counts
+                const allQ = query(feedbackCollection, where('uid', '==', currentUid));
+                const allSnap = await getDocs(allQ);
+                const allDocs = allSnap.docs.map(d => d.data());
+                const total = allDocs.length;
+                const open = allDocs.filter(d => d.status === 'open' || d.status === 'in_progress').length;
+                const resolved = allDocs.filter(d => d.status === 'resolved' || d.status === 'closed').length;
+
+                document.getElementById('fbTotalCount').textContent = total;
+                document.getElementById('fbOpenCount').textContent = open;
+                document.getElementById('fbResolvedCount').textContent = resolved;
+
+                const latestEl = document.getElementById('fbLatestPreview');
+                if (items.length === 0) {
+                    latestEl.textContent = 'No feedback yet. Click "New" to submit.';
+                } else {
+                    const latest = items[0];
+                    const statusMap = {
+                        'open': '🟡 Open',
+                        'in_progress': '🔵 In Progress',
+                        'resolved': '🟢 Resolved',
+                        'closed': '⚪ Closed'
+                    };
+                    const date = latest.createdAt ? new Date(latest.createdAt.seconds * 1000).toLocaleDateString(
+                        'en-IN', { day: 'numeric', month: 'short' }) : '—';
+                    latestEl.innerHTML =
+                        `<strong>${latest.ticketId || '—'}</strong> — ${latest.subject} <span style="color:var(--ink-soft);font-size:11px;">(${statusMap[latest.status] || latest.status} · ${date})</span>`;
+                }
+            } catch (e) {
+                // silent
+            }
+        }
+
+        // ========== MY FEEDBACK ==========
+        let myFeedbackPage = 0;
+        const MY_FEEDBACK_LIMIT = 20;
+
+        function openMyFeedback() {
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            document.getElementById('myFeedbackOverlay').classList.add('open');
+            myFeedbackPage = 0;
+            renderMyFeedback();
+        }
+
+        function closeMyFeedback() {
+            document.getElementById('myFeedbackOverlay').classList.remove('open');
+        }
+
+        async function renderMyFeedback() {
+            const body = document.getElementById('myFeedbackBody');
+            if (!body) return;
+            try {
+                const q = query(
+                    feedbackCollection,
+                    where('uid', '==', currentUid),
+                    orderBy('createdAt', 'desc'),
+                    limit(MY_FEEDBACK_LIMIT)
+                );
+                const snap = await getDocs(q);
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                if (items.length === 0) {
+                    body.innerHTML = `<div class="feedback-empty">You haven't submitted any feedback yet.</div>`;
+                    return;
+                }
+
+                let html = '';
+                items.forEach(f => {
+                    const statusMap = {
+                        'open': 'fb-status-open',
+                        'in_progress': 'fb-status-in_progress',
+                        'resolved': 'fb-status-resolved',
+                        'closed': 'fb-status-closed'
+                    };
+                    const statusLabel = {
+                        'open': 'Open',
+                        'in_progress': 'In Progress',
+                        'resolved': 'Resolved',
+                        'closed': 'Closed'
+                    };
+                    const date = f.createdAt ? new Date(f.createdAt.seconds * 1000).toLocaleDateString(
+                        'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                    const priorityClass = f.priority === 'high' ? 'fb-priority-high' : f.priority === 'medium' ?
+                        'fb-priority-medium' : 'fb-priority-low';
+
+                    html += `
+                <div class="feedback-list-item">
+                  <div class="fb-head">
+                    <div>
+                      <span class="fb-ticket">${f.ticketId || '—'}</span>
+                      <span class="fb-subject">${f.subject}</span>
+                    </div>
+                    <span class="fb-status-badge ${statusMap[f.status] || 'fb-status-open'}">${statusLabel[f.status] || 'Open'}</span>
+                  </div>
+                  <div class="fb-meta">
+                    <span class="${priorityClass}">${f.priority?.toUpperCase() || 'MEDIUM'}</span>
+                    · ${f.category} · ${date}
+                  </div>
+                  <div class="fb-message">${f.message}</div>
+                  ${f.attachment ? `<a href="${f.attachment}" target="_blank" class="fb-attachment-link">📎 View Attachment</a>` : ''}
+                  ${f.adminReply ? `
+                    <div class="fb-reply">
+                      <div class="fb-reply-label">💬 Admin Reply</div>
+                      ${f.adminReply}
+                      <div style="font-size:10px;color:var(--ink-soft);margin-top:4px;">${f.repliedBy ? 'by ' + f.repliedBy : ''} ${f.adminReplyAt ? '· ' + new Date(f.adminReplyAt.seconds * 1000).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
+                    </div>
+                  ` : ''}
+                  <div class="fb-actions">
+                    ${f.status === 'open' ? `<button class="btn-sm delete" onclick="deleteMyFeedback('${f.id}')">Delete</button>` : ''}
+                  </div>
+                </div>
+              `;
+                });
+
+                body.innerHTML = html;
+            } catch (e) {
+                body.innerHTML = `<div class="feedback-empty">Error loading feedback: ${e.message}</div>`;
+            }
+        }
+
+        async function deleteMyFeedback(id) {
+            if (!confirm('Delete this feedback? This cannot be undone.')) return;
+            try {
+                const docRef = doc(feedbackCollection, id);
+                const snap = await getDoc(docRef);
+                if (!snap.exists()) { showToast('Feedback not found.'); return; }
+                const data = snap.data();
+                if (data.uid !== currentUid) { showToast('You can only delete your own feedback.'); return; }
+                if (data.status !== 'open') { showToast('Only open feedback can be deleted.'); return; }
+                await deleteDoc(docRef);
+                showToast('Feedback deleted.');
+                renderMyFeedback();
+                renderFeedbackPreview();
+                if (isAdmin) renderAdminFeedback();
+            } catch (e) {
+                showToast('Error deleting: ' + e.message);
+            }
+        }
+
+        // ========== ADMIN FEEDBACK ==========
+        let adminFeedbackPage = 0;
+        const ADMIN_FEEDBACK_LIMIT = 20;
+        let adminFeedbackFilter = 'all';
+        let adminFeedbackSearch = '';
+        let adminFeedbackLastDoc = null;
+        let adminFeedbackDocs = [];
+
+        async function renderAdminFeedback() {
+            const el = document.getElementById('adminFeedbackContent');
+            if (!el) return;
+            try {
+                let q = query(feedbackCollection, orderBy('createdAt', 'desc'), limit(ADMIN_FEEDBACK_LIMIT));
+
+                // Build search/filter
+                let filtered = [];
+                const snap = await getDocs(q);
+                let allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Apply search
+                const search = adminFeedbackSearch.trim().toLowerCase();
+                if (search) {
+                    allDocs = allDocs.filter(d =>
+                        (d.name || '').toLowerCase().includes(search) ||
+                        (d.username || '').toLowerCase().includes(search) ||
+                        (d.ticketId || '').toLowerCase().includes(search) ||
+                        (d.subject || '').toLowerCase().includes(search) ||
+                        (d.category || '').toLowerCase().includes(search) ||
+                        (d.branch || '').toLowerCase().includes(search) ||
+                        (d.section || '').toLowerCase().includes(search) ||
+                        (d.status || '').toLowerCase().includes(search)
+                    );
+                }
+
+                // Apply filter
+                if (adminFeedbackFilter === 'open') {
+                    allDocs = allDocs.filter(d => d.status === 'open' || d.status === 'in_progress');
+                } else if (adminFeedbackFilter === 'high') {
+                    allDocs = allDocs.filter(d => d.priority === 'high');
+                } else if (adminFeedbackFilter === 'resolved') {
+                    allDocs = allDocs.filter(d => d.status === 'resolved' || d.status === 'closed');
+                } else if (adminFeedbackFilter === 'closed') {
+                    allDocs = allDocs.filter(d => d.status === 'closed');
+                }
+
+                adminFeedbackDocs = allDocs;
+
+                if (allDocs.length === 0) {
+                    el.innerHTML = `
+                <div class="fb-admin-search">
+                  <input class="search-box" placeholder="Search by name, username, ticket, subject…" value="${adminFeedbackSearch}" oninput="adminFeedbackSearch=this.value;renderAdminFeedback();" />
+                  <div class="fb-admin-filters">
+                    <button class="filter-btn ${adminFeedbackFilter==='all'?'active':''}" onclick="adminFeedbackFilter='all';renderAdminFeedback();">All</button>
+                    <button class="filter-btn ${adminFeedbackFilter==='open'?'active':''}" onclick="adminFeedbackFilter='open';renderAdminFeedback();">Open</button>
+                    <button class="filter-btn ${adminFeedbackFilter==='high'?'active':''}" onclick="adminFeedbackFilter='high';renderAdminFeedback();">High Priority</button>
+                    <button class="filter-btn ${adminFeedbackFilter==='resolved'?'active':''}" onclick="adminFeedbackFilter='resolved';renderAdminFeedback();">Resolved</button>
+                    <button class="filter-btn ${adminFeedbackFilter==='closed'?'active':''}" onclick="adminFeedbackFilter='closed';renderAdminFeedback();">Closed</button>
+                  </div>
+                </div>
+                <div class="feedback-empty">No feedback tickets found.</div>
+              `;
+                    return;
+                }
+
+                let html = `
+              <div class="fb-admin-search">
+                <input class="search-box" placeholder="Search by name, username, ticket, subject…" value="${adminFeedbackSearch}" oninput="adminFeedbackSearch=this.value;renderAdminFeedback();" />
+                <div class="fb-admin-filters">
+                  <button class="filter-btn ${adminFeedbackFilter==='all'?'active':''}" onclick="adminFeedbackFilter='all';renderAdminFeedback();">All</button>
+                  <button class="filter-btn ${adminFeedbackFilter==='open'?'active':''}" onclick="adminFeedbackFilter='open';renderAdminFeedback();">Open</button>
+                  <button class="filter-btn ${adminFeedbackFilter==='high'?'active':''}" onclick="adminFeedbackFilter='high';renderAdminFeedback();">High Priority</button>
+                  <button class="filter-btn ${adminFeedbackFilter==='resolved'?'active':''}" onclick="adminFeedbackFilter='resolved';renderAdminFeedback();">Resolved</button>
+                  <button class="filter-btn ${adminFeedbackFilter==='closed'?'active':''}" onclick="adminFeedbackFilter='closed';renderAdminFeedback();">Closed</button>
+                </div>
+              </div>
+              <div class="fb-admin-table-wrap">
+                <table class="fb-admin-table">
+                  <thead>
+                    <tr>
+                      <th>Ticket</th>
+                      <th>Student</th>
+                      <th>Branch/Sec</th>
+                      <th>Category</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Subject</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+
+                allDocs.forEach(f => {
+                    const statusMap = {
+                        'open': 'fb-status-open',
+                        'in_progress': 'fb-status-in_progress',
+                        'resolved': 'fb-status-resolved',
+                        'closed': 'fb-status-closed'
+                    };
+                    const statusLabel = {
+                        'open': 'Open',
+                        'in_progress': 'In Progress',
+                        'resolved': 'Resolved',
+                        'closed': 'Closed'
+                    };
+                    const branchName = getBranch(f.branch)?.name || f.branch || '—';
+                    const shortBranch = branchName.replace('B.Tech — ', '');
+                    const date = f.createdAt ? new Date(f.createdAt.seconds * 1000).toLocaleDateString(
+                        'en-IN', { day: 'numeric', month: 'short' }) : '—';
+
+                    html += `
+                <tr>
+                  <td><span class="fb-ticket" style="font-weight:600;">${f.ticketId || '—'}</span></td>
+                  <td>${f.name || '—'}<br/><span style="font-size:10px;color:var(--ink-soft);">@${f.username || '—'}</span></td>
+                  <td>${shortBranch}<br/><span style="font-size:10px;color:var(--ink-soft);">Sec ${f.section || '—'}</span></td>
+                  <td>${f.category || '—'}</td>
+                  <td><span class="${f.priority === 'high' ? 'fb-priority-high' : f.priority === 'medium' ? 'fb-priority-medium' : 'fb-priority-low'}">${f.priority?.toUpperCase() || 'MED'}</span></td>
+                  <td><span class="fb-status-badge ${statusMap[f.status] || 'fb-status-open'}">${statusLabel[f.status] || 'Open'}</span></td>
+                  <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.subject || ''}">${f.subject || '—'}</td>
+                  <td>
+                    <div class="fb-admin-actions">
+                      <button class="btn-sm reply-btn" onclick="openAdminReply('${f.id}')">Reply</button>
+                      <button class="btn-sm status-btn" onclick="changeFeedbackStatus('${f.id}')">Status</button>
+                      <button class="btn-sm del-btn" onclick="deleteFeedbackAdmin('${f.id}')">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+                });
+
+                html += `</tbody></table></div>`;
+                el.innerHTML = html;
+            } catch (e) {
+                el.innerHTML = `<div class="feedback-empty">Error loading feedback: ${e.message}</div>`;
+            }
+        }
+
+        // ========== ADMIN REPLY ==========
+        let replyFeedbackId = null;
+
+        function openAdminReply(feedbackId) {
+            replyFeedbackId = feedbackId;
+            document.getElementById('adminReplyModal').classList.add('open');
+            document.getElementById('adminReplyText').value = '';
+            document.getElementById('adminReplyError').style.display = 'none';
+            // show ticket info
+            getDoc(doc(feedbackCollection, feedbackId)).then(snap => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('replyTicketInfo').textContent =
+                        `Ticket: ${data.ticketId || '—'} — ${data.subject || ''}`;
+                }
+            }).catch(() => {});
+        }
+
+        function closeAdminReplyModal() {
+            document.getElementById('adminReplyModal').classList.remove('open');
+            replyFeedbackId = null;
+        }
+
+        async function submitAdminReply() {
+            if (!replyFeedbackId) { showToast('No feedback selected.'); return; }
+            const reply = document.getElementById('adminReplyText').value.trim();
+            if (!reply) { document.getElementById('adminReplyError').textContent = 'Please enter a reply.';
+                document.getElementById('adminReplyError').style.display = 'block'; return; }
+
+            try {
+                await updateDoc(doc(feedbackCollection, replyFeedbackId), {
+                    adminReply: reply,
+                    adminReplyAt: serverTimestamp(),
+                    repliedBy: currentUser ? currentUser.username : 'admin',
+                    status: 'in_progress',
+                    updatedAt: serverTimestamp()
+                });
+                showToast('✅ Reply sent!');
+                closeAdminReplyModal();
+                renderAdminFeedback();
+                renderFeedbackPreview();
+            } catch (e) {
+                document.getElementById('adminReplyError').textContent = 'Error: ' + e.message;
+                document.getElementById('adminReplyError').style.display = 'block';
+            }
+        }
+
+        // ========== CHANGE STATUS ==========
+        async function changeFeedbackStatus(feedbackId) {
+            const statuses = ['open', 'in_progress', 'resolved', 'closed'];
+            const labels = ['🟡 Open', '🔵 In Progress', '🟢 Resolved', '⚪ Closed'];
+            const current = await getDoc(doc(feedbackCollection, feedbackId));
+            if (!current.exists()) { showToast('Feedback not found.'); return; }
+            const curStatus = current.data().status || 'open';
+            const idx = statuses.indexOf(curStatus);
+            const next = statuses[(idx + 1) % statuses.length];
+            const choice = confirm(
+                `Current status: ${labels[statuses.indexOf(curStatus)]}\nClick OK to change to: ${labels[statuses.indexOf(next)]}`
+                );
+            if (!choice) return;
+            try {
+                await updateDoc(doc(feedbackCollection, feedbackId), {
+                    status: next,
+                    updatedAt: serverTimestamp()
+                });
+                showToast(`Status changed to ${next}.`);
+                renderAdminFeedback();
+                renderFeedbackPreview();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        // ========== DELETE FEEDBACK (ADMIN) ==========
+        async function deleteFeedbackAdmin(feedbackId) {
+            if (!confirm('Delete this feedback permanently?')) return;
+            try {
+                const snap = await getDoc(doc(feedbackCollection, feedbackId));
+                if (snap.exists() && snap.data().attachment) {
+                    try {
+                        const attachmentRef = ref(storage, snap.data().attachment);
+                        await deleteObject(attachmentRef);
+                    } catch (e) {}
+                }
+                await deleteDoc(doc(feedbackCollection, feedbackId));
+                showToast('Feedback deleted.');
+                renderAdminFeedback();
+                renderFeedbackPreview();
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        // ========== ERP RATING ==========
+        let selectedRating = 0;
+        let existingRating = null;
+
+        function openRatingModal() {
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            document.getElementById('ratingModal').classList.add('open');
+            document.getElementById('ratingFormError').style.display = 'none';
+            document.getElementById('ratingComment').value = '';
+            loadExistingRating();
+        }
+
+        function closeRatingModal() {
+            document.getElementById('ratingModal').classList.remove('open');
+        }
+
+        async function loadExistingRating() {
+            if (!currentUser) return;
+            try {
+                const q = query(ratingsCollection, where('uid', '==', currentUid));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const doc = snap.docs[0];
+                    existingRating = { id: doc.id, ...doc.data() };
+                    selectedRating = existingRating.rating || 0;
+                    document.getElementById('ratingComment').value = existingRating.comment || '';
+                    document.getElementById('ratingExisting').style.display = 'block';
+                    document.getElementById('ratingExisting').innerHTML =
+                        `⭐ You rated ${existingRating.rating} stars. You can update your rating below.`;
+                    updateRatingStars();
+                } else {
+                    existingRating = null;
+                    selectedRating = 0;
+                    document.getElementById('ratingExisting').style.display = 'none';
+                    updateRatingStars();
+                }
+            } catch (e) {}
+        }
+
+        function updateRatingStars() {
+            const stars = document.querySelectorAll('#ratingStars span');
+            stars.forEach((el, i) => {
+                el.className = i < selectedRating ? 'star-on' : 'star-off';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const stars = document.querySelectorAll('#ratingStars span');
+            stars.forEach(el => {
+                el.addEventListener('click', () => {
+                    selectedRating = parseInt(el.dataset.val);
+                    updateRatingStars();
+                });
+                el.addEventListener('mouseenter', () => {
+                    const val = parseInt(el.dataset.val);
+                    const all = document.querySelectorAll('#ratingStars span');
+                    all.forEach((s, i) => {
+                        s.className = i < val ? 'star-on' : 'star-off';
+                    });
+                });
+                el.addEventListener('mouseleave', updateRatingStars);
+            });
+        });
+
+        async function submitRating() {
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            if (selectedRating < 1 || selectedRating > 5) {
+                document.getElementById('ratingFormError').textContent = 'Please select a rating (1–5 stars).';
+                document.getElementById('ratingFormError').style.display = 'block';
+                return;
+            }
+            const comment = document.getElementById('ratingComment').value.trim();
+
+            try {
+                if (existingRating) {
+                    await updateDoc(doc(ratingsCollection, existingRating.id), {
+                        rating: selectedRating,
+                        comment: comment,
+                        updatedAt: serverTimestamp()
+                    });
+                    showToast('⭐ Rating updated!');
+                } else {
+                    await addDoc(ratingsCollection, {
+                        uid: currentUid,
+                        username: currentUser.username,
+                        name: currentUser.name,
+                        rating: selectedRating,
+                        comment: comment,
+                        createdAt: serverTimestamp()
+                    });
+                    showToast('⭐ Thanks for rating!');
+                }
+                closeRatingModal();
+                loadExistingRating();
+            } catch (e) {
+                document.getElementById('ratingFormError').textContent = 'Error: ' + e.message;
+                document.getElementById('ratingFormError').style.display = 'block';
+            }
         }
 
         // ========== BOOT ==========
@@ -4077,6 +5596,10 @@
                         window._adminUnsub = null; }
                     if (window._holidaysUnsub) { window._holidaysUnsub();
                         window._holidaysUnsub = null; }
+                    if (window._postsUnsub) { window._postsUnsub();
+                        window._postsUnsub = null; }
+                    if (window._feedbackUnsub) { window._feedbackUnsub();
+                        window._feedbackUnsub = null; }
                     return;
                 }
                 try {
@@ -4087,7 +5610,7 @@
                     }
                     await loginAs(record, user.uid);
                     document.getElementById('loadingScreen').style.display = 'none';
-                    setTimeout(renderPostsFeed, 500);
+                    setTimeout(() => renderPostsFeed(), 500);
                 } catch (e) {
                     if (signingUp) return;
                     await signOut(auth);
@@ -4100,10 +5623,39 @@
             setInterval(() => { if (currentUser) { renderTopbarDate();
                     renderSchedule();
                     renderHistoryView(); } }, 60000);
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAdminPanel(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeAdminPanel();
+                    closeProfileModal();
+                    closeFeedbackForm();
+                    closeMyFeedback();
+                    closeRatingModal();
+                    closeAdminReplyModal(); } });
             document.getElementById('adminPanel').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('adminPanel')) closeAdminPanel();
             });
+            document.getElementById('profileModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('profileModal')) closeProfileModal();
+            });
+            document.getElementById('feedbackFormOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('feedbackFormOverlay')) closeFeedbackForm();
+            });
+            document.getElementById('myFeedbackOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('myFeedbackOverlay')) closeMyFeedback();
+            });
+            document.getElementById('ratingModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('ratingModal')) closeRatingModal();
+            });
+            document.getElementById('adminReplyModal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('adminReplyModal')) closeAdminReplyModal();
+            });
+
+            // Feedback char counter
+            const fbMsg = document.getElementById('fbMessage');
+            if (fbMsg) {
+                fbMsg.addEventListener('input', () => {
+                    const el = document.getElementById('fbCharCount');
+                    if (el) el.textContent = fbMsg.value.length + ' / 2000';
+                });
+            }
         }
 
         // Expose globals
@@ -4120,6 +5672,7 @@
         window.closeAdminPanel = closeAdminPanel;
         window.switchAdminTab = switchAdminTab;
         window.renderAdminDashboard = renderAdminDashboard;
+        window.renderAdminUsers = renderAdminUsers;
         window.renderAdminTimetable = renderAdminTimetable;
         window.renderAdminCalendar = renderAdminCalendar;
         window.renderAdminHolidays = renderAdminHolidays;
@@ -4133,6 +5686,31 @@
         window.renderHistoryView = renderHistoryView;
         window.addHoliday = addHoliday;
         window.deleteHoliday = deleteHoliday;
+        window.openProfileModal = openProfileModal;
+        window.closeProfileModal = closeProfileModal;
+        window.saveProfile = saveProfile;
+        window.changePassword = changePassword;
+        window.scrollToPosts = scrollToPosts;
+
+        // Feedback exports
+        window.openFeedbackForm = openFeedbackForm;
+        window.closeFeedbackForm = closeFeedbackForm;
+        window.submitFeedback = submitFeedback;
+        window.openMyFeedback = openMyFeedback;
+        window.closeMyFeedback = closeMyFeedback;
+        window.deleteMyFeedback = deleteMyFeedback;
+        window.renderAdminFeedback = renderAdminFeedback;
+        window.openAdminReply = openAdminReply;
+        window.closeAdminReplyModal = closeAdminReplyModal;
+        window.submitAdminReply = submitAdminReply;
+        window.changeFeedbackStatus = changeFeedbackStatus;
+        window.deleteFeedbackAdmin = deleteFeedbackAdmin;
+        window.openRatingModal = openRatingModal;
+        window.closeRatingModal = closeRatingModal;
+        window.submitRating = submitRating;
+        window.renderFeedbackPreview = renderFeedbackPreview;
+        window.adminFeedbackFilter = 'all';
+        window.adminFeedbackSearch = '';
 
         boot();
     </script>
