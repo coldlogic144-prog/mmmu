@@ -1801,6 +1801,116 @@
             color: #D9D4C4;
         }
 
+        /* ===== COMMUNITY POSTS ===== */
+        .community-post {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--paper-line);
+        }
+        .community-post:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .community-post .cp-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .community-post .cp-author {
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .community-post .cp-author span {
+            font-weight: 400;
+            color: var(--ink-soft);
+            font-size: 11px;
+        }
+        .community-post .cp-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-top: 4px;
+        }
+        .community-post .cp-body {
+            font-size: 13px;
+            color: var(--ink-soft);
+            margin-top: 4px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .community-post .cp-image {
+            margin-top: 8px;
+            max-width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--paper-line);
+            max-height: 300px;
+            object-fit: cover;
+        }
+        .community-post .cp-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .community-post .cp-like-btn {
+            border: none;
+            background: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--ink-soft);
+            transition: color .15s;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .community-post .cp-like-btn:hover {
+            background: var(--paper);
+        }
+        .community-post .cp-like-btn.liked {
+            color: var(--brick);
+        }
+        .community-post .cp-like-btn.liked:hover {
+            background: var(--brick-soft);
+        }
+        .community-post .cp-like-count {
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 20px;
+        }
+        .community-post .cp-delete-btn {
+            border: none;
+            background: none;
+            font-size: 12px;
+            color: var(--brick-soft);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .community-post .cp-delete-btn:hover {
+            background: var(--brick-soft);
+            color: var(--brick);
+        }
+        .community-post .cp-time {
+            font-size: 10px;
+            color: var(--ink-soft);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .cp-modal textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .cp-modal .cp-image-preview {
+            margin-top: 8px;
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 1px solid var(--paper-line);
+        }
+
         @media (max-width: 600px) {
             .feedback-panel-body {
                 padding: 16px;
@@ -2032,6 +2142,22 @@
                         </div>
                     </div>
 
+                    <!-- ===== COMMUNITY POSTS CARD ===== -->
+                    <div class="card" id="communityPostsCard">
+                        <div class="card-head">
+                            <div>
+                                <div class="card-eyebrow">📝 Community</div>
+                                <div class="card-title display" style="margin-bottom:0;">Posts</div>
+                            </div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <button class="btn-primary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openCreatePost()">✏️ New Post</button>
+                            </div>
+                        </div>
+                        <div id="communityPostsFeed" style="max-height:450px;overflow-y:auto;padding-right:4px;">
+                            <div style="text-align:center;padding:20px 0;color:var(--ink-soft);">Loading posts…</div>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <div class="card-eyebrow">Quick Resources</div>
                         <div class="card-title display" style="margin-bottom:16px;">MMMUT Links</div>
@@ -2049,6 +2175,38 @@
             </div>
         </div>
         <footer class="app-foot">M.M.M. University of Technology, Gorakhpur — Session 2026–27</footer>
+    </div>
+
+    <!-- ===== CREATE POST OVERLAY ===== -->
+    <div class="feedback-overlay" id="createPostOverlay">
+        <div class="feedback-panel cp-modal" style="max-width:560px;">
+            <div class="feedback-panel-header">
+                <h2>✏️ Create Post</h2>
+                <button class="close-btn" onclick="closeCreatePost()">✕</button>
+            </div>
+            <div class="feedback-panel-body">
+                <form id="createPostForm" onsubmit="submitCommunityPost(event)">
+                    <div class="field">
+                        <label>Title</label>
+                        <input id="cpTitle" placeholder="Post title" maxlength="100" required />
+                    </div>
+                    <div class="field">
+                        <label>Content</label>
+                        <textarea id="cpContent" placeholder="What's on your mind?" rows="4" required></textarea>
+                    </div>
+                    <div class="field">
+                        <label>Image <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
+                        <input type="file" id="cpImage" accept="image/*" onchange="previewCommunityPostImage()" />
+                        <img id="cpImagePreview" class="cp-image-preview" style="display:none;" />
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+                        <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;margin:0;">Post</button>
+                        <button type="button" class="btn-secondary" style="margin:0;" onclick="closeCreatePost()">Cancel</button>
+                    </div>
+                    <div id="cpFormError" style="margin-top:12px;font-size:13px;color:var(--brick);display:none;"></div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- ===== FEEDBACK FORM OVERLAY ===== -->
@@ -2186,7 +2344,7 @@
                     <option value="Not specified">Not specified</option>
                 </select>
             </div>
-            <button class="btn-primary" onclick="saveProfile()">Save Section</button>
+            <button class="btn-primary" onclick="saveProfile()">Save Profile</button>
 
             <hr />
 
@@ -2284,7 +2442,9 @@
             orderBy,
             startAfter,
             getCountFromServer,
-            Timestamp
+            Timestamp,
+            arrayUnion,
+            arrayRemove
         } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
         import {
             getStorage,
@@ -2317,6 +2477,7 @@
         const holidaysCollection = collection(db, "holidays");
         const feedbackCollection = collection(db, "feedback");
         const ratingsCollection = collection(db, "ratings");
+        const communityPostsCollection = collection(db, "communityPosts");
 
         // ========== DATA ==========
         const PERIODS = [
@@ -3467,6 +3628,7 @@
         let holidays = new Set();
         let allPosts = [];
         let lastReadPosts = 0;
+        let communityPosts = [];
 
         // ========== TOAST ==========
         function showToast(msg, duration = 3000) {
@@ -3508,10 +3670,8 @@
             document.getElementById('profileBranch').value = branch.name;
             const sel = document.getElementById('profileSection');
             sel.innerHTML = branch.sections.map(s => `<option value="${s}" ${s===currentUser.section?'selected':''}>${s}</option>`).join('');
-            // Set hostel and gender
             document.getElementById('profileHostel').value = currentUser.hostel || 'Day Scholar';
             document.getElementById('profileGender').value = currentUser.gender || 'Not specified';
-            // Clear password fields
             document.getElementById('profileOldPassword').value = '';
             document.getElementById('profileNewPassword').value = '';
             document.getElementById('profileConfirmPassword').value = '';
@@ -3690,6 +3850,7 @@
             closeMyFeedback();
             closeRatingModal();
             closeAdminReplyModal();
+            closeCreatePost();
         }
 
         async function loadUserProfile(uid) {
@@ -3798,6 +3959,16 @@
                 }
             });
 
+            // Listen to community posts
+            if (window._communityPostsUnsub) window._communityPostsUnsub();
+            window._communityPostsUnsub = onSnapshot(
+                query(communityPostsCollection, orderBy('createdAt', 'desc')),
+                (snap) => {
+                    communityPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    renderCommunityPosts();
+                }
+            );
+
             // Listen to feedback for notifications
             if (window._feedbackUnsub) window._feedbackUnsub();
             window._feedbackUnsub = onSnapshot(
@@ -3806,7 +3977,6 @@
                     if (document.getElementById('feedbackPreviewContent')) {
                         renderFeedbackPreview();
                     }
-                    // Check for new replies
                     snap.docChanges().forEach(change => {
                         if (change.type === 'modified') {
                             const data = change.doc.data();
@@ -3856,10 +4026,9 @@
             }
 
             setTimeout(updateNotificationBadge, 500);
-            // Load feedback preview
             renderFeedbackPreview();
-            // Load rating
             loadExistingRating();
+            renderCommunityPosts();
         }
 
         // ========== NOTIFICATION ==========
@@ -3984,6 +4153,8 @@
                 const totalHolidays = holidaysSnap.size;
                 const fbSnap = await getDocs(feedbackCollection);
                 const totalFeedback = fbSnap.size;
+                const cpSnap = await getDocs(communityPostsCollection);
+                const totalCommunityPosts = cpSnap.size;
                 el.innerHTML = `
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;">
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalUsers}</div><div style="font-size:12px;color:var(--ink-soft);">Total Users</div></div>
@@ -3992,6 +4163,7 @@
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalPosts}</div><div style="font-size:12px;color:var(--ink-soft);">Announcements</div></div>
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalHolidays}</div><div style="font-size:12px;color:var(--ink-soft);">Holidays</div></div>
                 <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalFeedback}</div><div style="font-size:12px;color:var(--ink-soft);">Feedback Tickets</div></div>
+                <div class="admin-card"><div class="title" style="font-size:28px;font-weight:700;">${totalCommunityPosts}</div><div style="font-size:12px;color:var(--ink-soft);">Community Posts</div></div>
               </div>
               <div style="font-size:13px;color:var(--ink-soft);">Welcome to the admin panel. Use the tabs above to manage users, timetable, calendar, holidays, announcements, admin requests, and feedback.</div>
             `;
@@ -5027,17 +5199,185 @@
         }
 
         // ============================================================
+        // ========== COMMUNITY POSTS ==================================
+        // ============================================================
+
+        function openCreatePost() {
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            document.getElementById('createPostOverlay').classList.add('open');
+            document.getElementById('cpTitle').value = '';
+            document.getElementById('cpContent').value = '';
+            document.getElementById('cpImage').value = '';
+            document.getElementById('cpImagePreview').style.display = 'none';
+            document.getElementById('cpFormError').style.display = 'none';
+        }
+
+        function closeCreatePost() {
+            document.getElementById('createPostOverlay').classList.remove('open');
+        }
+
+        function previewCommunityPostImage() {
+            const file = document.getElementById('cpImage').files[0];
+            const preview = document.getElementById('cpImagePreview');
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        async function submitCommunityPost(e) {
+            e.preventDefault();
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            const errorEl = document.getElementById('cpFormError');
+            errorEl.style.display = 'none';
+
+            const title = document.getElementById('cpTitle').value.trim();
+            const content = document.getElementById('cpContent').value.trim();
+            const fileInput = document.getElementById('cpImage');
+
+            if (!title) { errorEl.textContent = 'Please enter a title.';
+                errorEl.style.display = 'block'; return; }
+            if (!content) { errorEl.textContent = 'Please enter some content.';
+                errorEl.style.display = 'block'; return; }
+
+            let imageUrl = null;
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const path = `communityPosts/${currentUid}/${Date.now()}_${file.name}`;
+                const storageRef = ref(storage, path);
+                try {
+                    await uploadBytes(storageRef, file);
+                    imageUrl = await getDownloadURL(storageRef);
+                } catch (err) {
+                    errorEl.textContent = 'Failed to upload image: ' + err.message;
+                    errorEl.style.display = 'block';
+                    return;
+                }
+            }
+
+            try {
+                await addDoc(communityPostsCollection, {
+                    uid: currentUid,
+                    username: currentUser.username,
+                    name: currentUser.name,
+                    title,
+                    content,
+                    imageUrl,
+                    likes: [],
+                    createdAt: serverTimestamp()
+                });
+                showToast('✅ Post published!');
+                closeCreatePost();
+            } catch (err) {
+                errorEl.textContent = 'Error publishing post: ' + err.message;
+                errorEl.style.display = 'block';
+            }
+        }
+
+        async function renderCommunityPosts() {
+            const feed = document.getElementById('communityPostsFeed');
+            if (!feed) return;
+
+            if (!currentUser) {
+                feed.innerHTML = `<div class="empty-note">Log in to see community posts.</div>`;
+                return;
+            }
+
+            if (communityPosts.length === 0) {
+                feed.innerHTML = `<div class="empty-note">No posts yet. Be the first to share!</div>`;
+                return;
+            }
+
+            let html = '';
+            communityPosts.forEach(post => {
+                const date = post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleString(
+                    'en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit',
+                        minute: '2-digit' }) : '—';
+                const isLiked = post.likes && post.likes.includes(currentUid);
+                const likeCount = post.likes ? post.likes.length : 0;
+                const isOwn = post.uid === currentUid;
+
+                html += `
+              <div class="community-post">
+                <div class="cp-head">
+                  <div>
+                    <div class="cp-author">${post.name || 'Unknown'} <span>@${post.username || '—'}</span></div>
+                    <div class="cp-title">${post.title}</div>
+                  </div>
+                  <div class="cp-time">${date}</div>
+                </div>
+                <div class="cp-body">${post.content}</div>
+                ${post.imageUrl ? `<img src="${post.imageUrl}" class="cp-image" alt="Post image" loading="lazy" />` : ''}
+                <div class="cp-actions">
+                  <button class="cp-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
+                    ${isLiked ? '❤️' : '🤍'} <span class="cp-like-count">${likeCount}</span>
+                  </button>
+                  ${isOwn ? `<button class="cp-delete-btn" onclick="deleteCommunityPost('${post.id}')">🗑️ Delete</button>` : ''}
+                </div>
+              </div>
+            `;
+            });
+
+            feed.innerHTML = html;
+        }
+
+        async function toggleLike(postId) {
+            if (!currentUser) { showToast('Please log in first.'); return; }
+            try {
+                const postRef = doc(communityPostsCollection, postId);
+                const snap = await getDoc(postRef);
+                if (!snap.exists()) { showToast('Post not found.'); return; }
+                const data = snap.data();
+                const likes = data.likes || [];
+                const idx = likes.indexOf(currentUid);
+                if (idx > -1) {
+                    likes.splice(idx, 1);
+                } else {
+                    likes.push(currentUid);
+                }
+                await updateDoc(postRef, { likes });
+            } catch (e) {
+                showToast('Error: ' + e.message);
+            }
+        }
+
+        async function deleteCommunityPost(postId) {
+            if (!confirm('Delete this post? This cannot be undone.')) return;
+            try {
+                const postRef = doc(communityPostsCollection, postId);
+                const snap = await getDoc(postRef);
+                if (!snap.exists()) { showToast('Post not found.'); return; }
+                const data = snap.data();
+                if (data.uid !== currentUid) { showToast('You can only delete your own posts.'); return; }
+                if (data.imageUrl) {
+                    try {
+                        const imageRef = ref(storage, data.imageUrl);
+                        await deleteObject(imageRef);
+                    } catch (e) {}
+                }
+                await deleteDoc(postRef);
+                showToast('Post deleted.');
+            } catch (e) {
+                showToast('Error deleting: ' + e.message);
+            }
+        }
+
+        // ============================================================
         // ========== FEEDBACK SYSTEM ==================================
         // ============================================================
 
-        // Generate ticket ID: FB-2026-000001
         function generateTicketId() {
             const year = new Date().getFullYear();
             const random = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
             return `FB-${year}-${random}`;
         }
 
-        // Check rate limit: 5 per day per user
         async function checkRateLimit(uid) {
             const today = dateKey(new Date());
             const q = query(
@@ -5049,7 +5389,6 @@
             return snap.size < 5;
         }
 
-        // Open feedback form
         function openFeedbackForm() {
             if (!currentUser) { showToast('Please log in first.'); return; }
             document.getElementById('feedbackFormOverlay').classList.add('open');
@@ -5066,7 +5405,6 @@
             document.getElementById('feedbackFormOverlay').classList.remove('open');
         }
 
-        // Char counter
         document.addEventListener('DOMContentLoaded', () => {
             const msg = document.getElementById('fbMessage');
             if (msg) {
@@ -5076,7 +5414,6 @@
             }
         });
 
-        // Submit feedback
         async function submitFeedback(e) {
             e.preventDefault();
             if (!currentUser) { showToast('Please log in first.'); return; }
@@ -5098,12 +5435,10 @@
                     'Description must be between 20 and 2000 characters.';
                 errorEl.style.display = 'block'; return; }
 
-            // Rate limit
             const ok = await checkRateLimit(currentUid);
             if (!ok) { errorEl.textContent = 'Daily feedback limit reached (5 per day).';
                 errorEl.style.display = 'block'; return; }
 
-            // Upload screenshot if any
             let attachmentUrl = null;
             if (fileInput.files && fileInput.files[0]) {
                 const file = fileInput.files[0];
@@ -5153,7 +5488,6 @@
             }
         }
 
-        // Preview on dashboard card
         async function renderFeedbackPreview() {
             if (!currentUser) return;
             const previewEl = document.getElementById('feedbackPreviewContent');
@@ -5163,7 +5497,6 @@
                 const snap = await getDocs(q);
                 const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // Counts
                 const allQ = query(feedbackCollection, where('uid', '==', currentUid));
                 const allSnap = await getDocs(allQ);
                 const allDocs = allSnap.docs.map(d => d.data());
@@ -5191,9 +5524,7 @@
                     latestEl.innerHTML =
                         `<strong>${latest.ticketId || '—'}</strong> — ${latest.subject} <span style="color:var(--ink-soft);font-size:11px;">(${statusMap[latest.status] || latest.status} · ${date})</span>`;
                 }
-            } catch (e) {
-                // silent
-            }
+            } catch (e) {}
         }
 
         // ========== MY FEEDBACK ==========
@@ -5316,12 +5647,10 @@
             try {
                 let q = query(feedbackCollection, orderBy('createdAt', 'desc'), limit(ADMIN_FEEDBACK_LIMIT));
 
-                // Build search/filter
                 let filtered = [];
                 const snap = await getDocs(q);
                 let allDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // Apply search
                 const search = adminFeedbackSearch.trim().toLowerCase();
                 if (search) {
                     allDocs = allDocs.filter(d =>
@@ -5336,7 +5665,6 @@
                     );
                 }
 
-                // Apply filter
                 if (adminFeedbackFilter === 'open') {
                     allDocs = allDocs.filter(d => d.status === 'open' || d.status === 'in_progress');
                 } else if (adminFeedbackFilter === 'high') {
@@ -5447,7 +5775,6 @@
             document.getElementById('adminReplyModal').classList.add('open');
             document.getElementById('adminReplyText').value = '';
             document.getElementById('adminReplyError').style.display = 'none';
-            // show ticket info
             getDoc(doc(feedbackCollection, feedbackId)).then(snap => {
                 if (snap.exists()) {
                     const data = snap.data();
@@ -5654,6 +5981,8 @@
                         window._postsUnsub = null; }
                     if (window._feedbackUnsub) { window._feedbackUnsub();
                         window._feedbackUnsub = null; }
+                    if (window._communityPostsUnsub) { window._communityPostsUnsub();
+                        window._communityPostsUnsub = null; }
                     return;
                 }
                 try {
@@ -5682,7 +6011,8 @@
                     closeFeedbackForm();
                     closeMyFeedback();
                     closeRatingModal();
-                    closeAdminReplyModal(); } });
+                    closeAdminReplyModal();
+                    closeCreatePost(); } });
             document.getElementById('adminPanel').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('adminPanel')) closeAdminPanel();
             });
@@ -5701,8 +6031,10 @@
             document.getElementById('adminReplyModal').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('adminReplyModal')) closeAdminReplyModal();
             });
+            document.getElementById('createPostOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('createPostOverlay')) closeCreatePost();
+            });
 
-            // Feedback char counter
             const fbMsg = document.getElementById('fbMessage');
             if (fbMsg) {
                 fbMsg.addEventListener('input', () => {
@@ -5745,6 +6077,15 @@
         window.saveProfile = saveProfile;
         window.changePassword = changePassword;
         window.scrollToPosts = scrollToPosts;
+
+        // Community posts exports
+        window.openCreatePost = openCreatePost;
+        window.closeCreatePost = closeCreatePost;
+        window.submitCommunityPost = submitCommunityPost;
+        window.previewCommunityPostImage = previewCommunityPostImage;
+        window.toggleLike = toggleLike;
+        window.deleteCommunityPost = deleteCommunityPost;
+        window.renderCommunityPosts = renderCommunityPosts;
 
         // Feedback exports
         window.openFeedbackForm = openFeedbackForm;
