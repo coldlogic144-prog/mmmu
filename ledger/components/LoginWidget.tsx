@@ -3,25 +3,60 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { GraduationCap, ArrowRight, Sparkles } from "lucide-react";
-import { BRANCHES } from "@/lib/data";
+import {
+  BRANCHES,
+  SEMESTERS,
+  PROFILE_STORAGE_KEY,
+  defaultProfile,
+  type LedgerProfile,
+} from "@/lib/data";
 
 /**
  * LoginWidget — the modern glass auth card.
  *
- * Fields: Branch, Section, Hostel/Day-Scholar. On submit it shows a brief
- * "authenticating" shimmer then navigates to the dashboard. Static demo, but
- * the shape matches a real auth flow and is easy to swap for Firebase/DB.
+ * Fields: Branch, Semester, Section, and Hostel/Day-Scholar status. On submit
+ * it persists the chosen profile to localStorage (so the dashboard shows the
+ * student's real selection), shows a brief "authenticating" shimmer, then
+ * navigates to the dashboard. Static demo, but the shape matches a real auth
+ * flow and is easy to swap for Firebase/DB.
  */
 export default function LoginWidget() {
-  const [branch, setBranch] = useState(BRANCHES[1].id);
-  const [section, setSection] = useState("A");
-  const [hostel, setHostel] = useState("Day Scholar");
+  const [profile, setProfile] = useState<LedgerProfile>(() => {
+    // Hydrate from a previous login where present, else sensible defaults.
+    const saved = defaultProfile();
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<LedgerProfile>;
+          if (parsed.branchId) saved.branchId = parsed.branchId;
+          if (typeof parsed.semesterId === "number") saved.semesterId = parsed.semesterId;
+          if (parsed.section) saved.section = parsed.section;
+          if (parsed.hostel) saved.hostel = parsed.hostel;
+        }
+      } catch {
+        /* ignore malformed storage */
+      }
+    }
+    return saved;
+  });
   const [loading, setLoading] = useState(false);
 
-  const current = BRANCHES.find((b) => b.id === branch) ?? BRANCHES[0];
+  const currentBranch = BRANCHES.find((b) => b.id === profile.branchId) ?? BRANCHES[0];
+
+  const onBranchChange = (id: string) => {
+    const b = BRANCHES.find((x) => x.id === id);
+    setProfile((p) => ({ ...p, branchId: id, section: b?.sections[0] ?? "A" }));
+  };
 
   const submit = () => {
     setLoading(true);
+    // Persist the selection so the dashboard topbar reflects what was chosen.
+    try {
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    } catch {
+      /* private mode — dashboard falls back to defaults */
+    }
     // Small artificial delay so the motion state is visible, then open the
     // dashboard (kept as a push to avoid building a router dependency here).
     setTimeout(() => {
@@ -50,12 +85,8 @@ export default function LoginWidget() {
         <label className="block text-[11px] uppercase tracking-wide text-stone-400">
           Branch
           <select
-            value={branch}
-            onChange={(e) => {
-              setBranch(e.target.value);
-              const b = BRANCHES.find((x) => x.id === e.target.value);
-              setSection(b?.sections[0] ?? "A");
-            }}
+            value={profile.branchId}
+            onChange={(e) => onBranchChange(e.target.value)}
             className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-stone-200 outline-none"
           >
             {BRANCHES.map((b) => (
@@ -68,33 +99,52 @@ export default function LoginWidget() {
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="block text-[11px] tracking-wide text-stone-400">Section</span>
+            <span className="block text-[11px] tracking-wide text-stone-400">Semester</span>
             <select
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
+              value={profile.semesterId}
+              onChange={(e) =>
+                setProfile((p) => ({ ...p, semesterId: Number(e.target.value) }))
+              }
               className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-stone-200 outline-none"
             >
-              {current.sections.map((s) => (
-                <option key={s} value={s}>
-                  Section {s}
+              {SEMESTERS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="block">
-            <span className="block text-[11px] tracking-wide text-stone-400">Hostel</span>
+            <span className="block text-[11px] tracking-wide text-stone-400">Section</span>
             <select
-              value={hostel}
-              onChange={(e) => setHostel(e.target.value)}
+              value={profile.section}
+              onChange={(e) =>
+                setProfile((p) => ({ ...p, section: e.target.value }))
+              }
               className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-stone-200 outline-none"
             >
-              <option>Day Scholar</option>
-              <option>Tagore Hostel</option>
-              <option>VS Hostel</option>
+              {currentBranch.sections.map((s) => (
+                <option key={s} value={s}>
+                  Section {s}
+                </option>
+              ))}
             </select>
           </label>
         </div>
+
+        <label className="block text-[11px] uppercase tracking-wide text-stone-400">
+          Hostel / Day Scholar
+          <select
+            value={profile.hostel}
+            onChange={(e) => setProfile((p) => ({ ...p, hostel: e.target.value }))}
+            className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-stone-200 outline-none"
+          >
+            <option>Day Scholar</option>
+            <option>Tagore Hostel</option>
+            <option>VS Hostel</option>
+          </select>
+        </label>
 
         <motion.button
           whileHover={{ scale: 1.02 }}

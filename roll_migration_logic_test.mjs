@@ -1,9 +1,10 @@
-// roll_migration_logic_test.mjs — validates the roll-claim identity engine against
-// the real admission_data.csv roster WITHOUT touching the app or Firebase.
-// Mirrors the exact normalization/verdict logic embedded in index.html.
+// roll_migration_logic_test.mjs — validates the roll-verification identity + roster
+// auto-assign logic against the real admission_data.csv roster WITHOUT touching the
+// app or Firebase. Mirrors the exact helpers embedded in index.html (the identity
+// engine `evaluateRollClaim` plus the roster->branch mapping `rosterBranchToId`).
 //
 // Firestore `studentRoster` is the authoritative runtime source — this file only
-// exercises the same identity rules against the CSV the import script uses.
+// exercises the same rules against the CSV the import script uses.
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -127,6 +128,9 @@ function reportValidation() {
 
 // --- Byte-for-byte mirrors of the index.html helpers ---
 function normalizeUserName(s) { return String(s || '').toUpperCase().replace(/[^A-Z]/g, ' ').replace(/\s+/g, ' ').trim(); }
+// Byte-for-byte mirror of index.html rosterBranchToId: CED -> 'civil', CSD -> 'cse',
+// with fallback source = enrollmentNo.slice(4, 7) (the 'CED'/'CSD' letters).
+function rosterBranchToId(branchName) { return String(branchName || '').trim().toUpperCase() === 'CSD' ? 'cse' : 'civil'; }
 function evaluateRollClaim(profile, rosterEntry) {
   if (!rosterEntry) return { verdict: 'notfound', reasons: ['not-in-roster'] };
   const reasons = [];
@@ -189,7 +193,38 @@ for (const [roll, enr] of Object.entries(ROSTER)) {
   csdOk += got.verdict === 'ok' ? 1 : 0;
 }
 pass += csdOk === csdTotal ? 1 : 0;
-const total = tests.length + 1;
 console.log(csdOk === csdTotal ? 'PASS' : 'FAIL', `all CSD students auto-verify (${csdOk}/${csdTotal})`);
+
+// --- NEW: roster->branch auto-assign mapping (used by the hard gate + signup) ---
+const branchMapTests = [
+  ['CED', 'civil', 'CED -> civil'],
+  ['CSD', 'cse', 'CSD -> cse'],
+  ['ced', 'civil', 'lowercase ced -> civil'],
+  ['csd', 'cse', 'lowercase csd -> cse'],
+  ['', 'civil', 'empty/unknown -> civil fallback'],
+  [null, 'civil', 'null -> civil fallback'],
+];
+for (const [input, expect, label] of branchMapTests) {
+  const got = rosterBranchToId(input);
+  const ok = got === expect;
+  pass += ok ? 1 : 0;
+  console.log(ok ? 'PASS' : 'FAIL', label, `rosterBranchToId(${JSON.stringify(input)}) -> ${got} (expected ${expect})`);
+}
+
+// Every roster entry must resolve to a known branch id + a non-empty auto-name,
+// otherwise the hard gate could stall on a legitimate roll.
+let mapOk = 0, mapTotal = 0;
+for (const [, enr] of Object.entries(ROSTER)) {
+  mapTotal++;
+  const id = rosterBranchToId(enr.branchName);
+  const okName = !!(enr.applicantName || enr.formalName || '').trim();
+  const okBranch = id === 'civil' || id === 'cse';
+  if (okName && okBranch) mapOk++;
+}
+pass += mapOk === mapTotal ? 1 : 0;
+console.log(mapOk === mapTotal ? 'PASS' : 'FAIL',
+  `all roster rolls resolve name+branch (${mapOk}/${mapTotal})`);
+
+const total = tests.length + 1 + branchMapTests.length + 1;
 console.log('test', pass + ' / ' + total);
 process.exit(pass === total ? 0 : 1);

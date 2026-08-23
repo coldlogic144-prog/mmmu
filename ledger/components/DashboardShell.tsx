@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, GraduationCap, Menu } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
@@ -12,6 +13,12 @@ import ChessClub from "@/components/ChessClub";
 import CommunityBoard from "@/components/CommunityBoard";
 import Assistant from "@/components/Assistant";
 import GradientText from "@/components/GradientText";
+import {
+  BRANCHES,
+  SEMESTERS,
+  PROFILE_STORAGE_KEY,
+  defaultProfile,
+} from "@/lib/data";
 
 /** Maps the ?s= query to human-facing heading text. */
 const TITLES: Record<string, string> = {
@@ -32,6 +39,37 @@ const TITLES: Record<string, string> = {
 export default function DashboardShell({ tab }: { tab: string }) {
   const heading = TITLES[tab] ?? TITLES[""];
 
+  // Read the profile picked on the login screen (hydrated after mount to keep
+  // SSR output deterministic). Falls back to CSE · Sem 1 · Section A.
+  const [profileLabel, setProfileLabel] = useState("CSE · Sem 1 · Section A");
+  useEffect(() => {
+    const fallback = defaultProfile();
+    const branchName =
+      BRANCHES.find((b) => b.id === fallback.branchId)?.name.replace(/ \(.*\)$/, "") ??
+      "CSE";
+    const semesterLabel =
+      SEMESTERS.find((s) => s.id === fallback.semesterId)?.label ?? "Semester 1";
+    setProfileLabel(`${branchName} · ${semesterLabel} · Section ${fallback.section}`);
+    try {
+      const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+      if (raw) {
+        const p = JSON.parse(raw) as Partial<{
+          branchId: string;
+          semesterId: number;
+          section: string;
+        }>;
+        const bName =
+          BRANCHES.find((b) => b.id === p.branchId)?.name.replace(/ \(.*\)$/, "") ??
+          branchName;
+        const sLabel =
+          SEMESTERS.find((s) => s.id === p.semesterId)?.label ?? semesterLabel;
+        setProfileLabel(`${bName} · ${sLabel} · Section ${p.section ?? fallback.section}`);
+      }
+    } catch {
+      /* keep default */
+    }
+  }, []);
+
   return (
     <div className="min-h-screen lg:flex">
       <Sidebar activeTab={tab} />
@@ -43,7 +81,7 @@ export default function DashboardShell({ tab }: { tab: string }) {
           <div className="hidden items-center gap-2 text-violet-400 sm:flex">
             <GraduationCap className="h-5 w-5" />
             <span className="text-sm font-medium text-stone-300">
-              CSE · Sem 1 · Section A
+              {profileLabel}
             </span>
           </div>
 

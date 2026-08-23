@@ -20,6 +20,39 @@ export const BRANCHES: Branch[] = [
   { id: "bba", name: "BBA", sections: ["A", "B"] },
 ];
 
+/* ============ Semesters ============ */
+
+export type Semester = { id: number; label: string };
+
+/** B.Tech semester ladder — the student picks one on the login screen. */
+export const SEMESTERS: Semester[] = [
+  { id: 1, label: "Semester 1" },
+  { id: 2, label: "Semester 2" },
+  { id: 3, label: "Semester 3" },
+  { id: 4, label: "Semester 4" },
+  { id: 5, label: "Semester 5" },
+  { id: 6, label: "Semester 6" },
+];
+
+/** The profile a student chooses on the login card, persisted locally. */
+export type LedgerProfile = {
+  branchId: string;
+  semesterId: number;
+  section: string;
+  hostel: string;
+};
+
+export const PROFILE_STORAGE_KEY = "ledger.profile";
+
+export function defaultProfile(): LedgerProfile {
+  return {
+    branchId: BRANCHES[1].id, // cse
+    semesterId: 1,
+    section: BRANCHES[1].sections[0], // "A"
+    hostel: "Day Scholar",
+  };
+}
+
 /* ============ Bell schedule ============ */
 
 export type PeriodType = "Lecture" | "Practical" | "Tutorial" | "Free";

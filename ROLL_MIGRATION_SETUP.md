@@ -12,13 +12,13 @@ data (attendance, posts, feedback, timetable, syllabus, chess, FCM) is rewritten
 | Piece | Where |
 |---|---|
 | Master switches `ROLL_MIGRATION_ENABLED` / `ROLL_MIGRATION_TEST_MODE` / `ROLL_MIGRATION_TEST_USERS` | near top of the inline script (after `chessGames` collection) |
-| Claim gate UI (“Link your MMMUT Roll Number”) | `#migrationModal` (after the profile modal) |
-| Claim logic `verifyRollNumber()`, identity check `evaluateRollClaim()`, state helper `setMigrationState()` | before the NOTIFICATION section |
+| **Hard verification gate** — blocks ALL app functionality until the roll is verified; **non-dismissible** (no ✕, no “Skip for now”) | `#migrationModal` (after the profile modal); the app stays `display:none` via `enforceRollGate()` until `finalizeRollVerification()` unlocks it |
+| Gate logic `enforceRollGate()` / `verifyRollNumber()`, identity auto-assign `rosterBranchToId()` / `finalizeRollVerification()`, state helper `setMigrationState()` | before the NOTIFICATION section |
 | Roll-number login — **two explicit options** in `handleLogin()` | segmented “Username / Roll Number” toggle (`#loginMethodUser`, `#loginMethodRoll`); the roll path resolves `userRolls/{roll}` → existing account |
 | Migration status + roll number shown in the profile modal | `#profileRollNumber`, `#profileMigrationStatus`, “Link my roll number” |
 | Admin verification tab “🎓 Roll Verify” | existing admin panel (`isAdmin`-gated) — lists pending/rejected/manual users, approve/reject/review, plus a roll lookup |
 | Safe console diagnostics (`console.debug('[roll-mig] …')`) | gated by `ROLL_MIGRATION_DEBUG`; never logs passwords/tokens/keys |
-| Compulsory roll number on signup | `handleSignup()` reads `suRollNumber`, requires a valid 10-digit roll, pre-checks the roster, and auto-links it (`verified`) when the identity engine passes |
+| **Compulsory roll number on signup — NO name field.** The full name and branch are AUTO-ASSIGNED from `studentRoster/{roll}` (`applicantName`, `branchName`); the user only picks username/password (+ hostel/gender) | `handleSignup()` resolves the roll before creating the account, refuses rolls that are not in the roster or already linked, and creates the account `verified` |
 
 ## 2. The two new Firestore collections the feature reads/writes
 
@@ -53,35 +53,35 @@ rules are untouched; only the two new collections get rules.
 
 ### c) Test (recommended order)
 1. Deploy this `index.html`. With `ROLL_MIGRATION_TEST_MODE = false` **everyone** is
-   asked for their roll number (existing users get the gate after login; new users
-   must type theirs on signup).
-2. To check the auto-verify path, sign up / claim a roll whose `Applicant_Name`
-   matches the account name and (CED → `civil`, CSD → `cse`) matches the branch.
-3. To check the **admin override**, log in as `tanish` (the admin), open the “Link
-   your roll number” gate, and submit any unclaimed roster roll — it auto-verifies
-   even though `tanish`’s name is not in the admission CSV.
-4. Sign out and sign back in using the **🎓 Roll Number** login toggle + password.
+   hard-gated: existing users see the non-dismissible verify modal after login; new
+   users must enter a roster roll on signup (name & branch are auto-filled from it).
+2. Sign up with a roster roll (`2026011001`) — the account is created **already
+   verified** and named from the roster (AARAV SINGH / civil), no name is typed.
+3. Sign out and back in with a username whose roll is not yet verified — the app
+   stays hidden behind the gate; no attendance/chat/timetable is reachable.
+4. Enter any unclaimed roster roll in the gate — it verifies instantly and **adopts
+   the roster name + mapped branch** (CED → civil, CSD → cse), then unlocks the app.
+5. Sign out and sign back in using the **🎓 Roll Number** login toggle + password.
 
 > During rollout you can keep it to a subset by setting `ROLL_MIGRATION_TEST_MODE
 > = true` and adding usernames to `ROLL_MIGRATION_TEST_USERS`.
 
-## 4. Test cases from your spec (Phase 13) — how each is satisfied
+## 4. Test cases — how each is satisfied now
 | Scenario | Behavior |
 |---|---|
 | Existing user logs in | unchanged, profile loaded from `users/{uid}` |
-| `migrationStatus === 'pending'` | dismissible gate opens after login |
-| Correct roll + roster name + CED/civil | auto-verified: updateDoc only, UID unchanged |
-| All existing user fields preserved | migration writes are `updateDoc` merges only |
+| `migrationStatus !== 'verified'` | **HARD gate** — the app stays hidden (non-dismissible) until verification |
+| Correct (unclaimed) roster roll entered in the gate | verifies instantly; **name + branch adopted from the roster**; `updateDoc` merge only, UID unchanged |
+| Existing user whose old signup name differs from the roster | no longer stalls — on verify the roster name is adopted automatically |
+| All existing user fields preserved | verification writes are `updateDoc` merges only |
 | Attendance intact | no `attendance` writes happen anywhere in the flow |
-| Log out / log back in | mapping is re-detected as `verified` (no gate) |
-| Wrong roll number | “not found in roster” |
-| Already-claimed roll | “linked to another account” + status `rejected` |
-| Nonexistent roll | rejected before any write |
-| Name mismatch (non-admin) | `manual_review`, “contact an administrator” path |
-| **CSD roll** | mapped to the app’s existing `cse` branch; auto-verifies when name matches — no longer forced to manual review |
-| **Admin (`tanish`) name/branch mismatch** | auto-verified via the admin override (`evaluateRollClaim` skips name/branch mismatch for `isAdmin`) |
+| Log out / log back in | mapping is re-detected as `verified` (app opens, no gate) |
+| Wrong / nonexistent roll number | “not found in 2026–27 admission roster” — rejected before any write |
+| Already-claimed roll | “already linked to a different account” + status `rejected` |
+| **CSD roll** | mapped to the app’s existing `cse` branch; auto-verifies — no longer forced to manual review |
+| **Admin (`tanish`)** | may also verify any unclaimed roster roll; the legacy `evaluateRollClaim` admin-override remains for reference |
 | Existing admin (`tanish`) | untouched; admin panel gains “🎓 Roll Verify” tab |
-| Old user who never migrates | old username/password login works forever |
+| Old user who never migrates | blocked by the hard gate — must verify a roster roll before the app opens |
 
 ## 5. Rollback (recovery)
 - **Kill-switch:** set `ROLL_MIGRATION_ENABLED = false` → gate & roll-login off; the app
@@ -93,9 +93,11 @@ rules are untouched; only the two new collections get rules.
   admin (or the admin SDK) may co-correct it; the app never transfers rolls.
 
 ## 6. Notes / next steps (explicit)
-- `ROLL_MIGRATION_TEST_MODE` is now `false` by default → **everyone** is asked for a
-  roll number. Flip it to `true` (plus add usernames to `ROLL_MIGRATION_TEST_USERS`)
-  for a staged rollout.
+- `ROLL_MIGRATION_TEST_MODE` is now `false` by default → **everyone** is hard-gated
+  behind roll-number verification before any feature opens. Flip it to `true`
+  (plus add usernames to `ROLL_MIGRATION_TEST_USERS`) for a staged rollout.
+- The full name is never asked anywhere: it is ALWAYS auto-assigned from the
+  admission roster on signup and on in-gate verification.
 - A fuller official roster (all branches incl. CSD, sections) can be swapped in later;
   the code reads generically from `studentRoster`.
 - No Cloud Function / Backend is required — the mapping is held in `userRolls` and
