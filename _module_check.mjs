@@ -1,3448 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ledger — MMMUT Attendance & Syllabus</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
-        :root {
-            --ink: #152A3B;
-            --ink-soft: #2C4258;
-            --paper: #EDEAE0;
-            --paper-raised: #F7F5EE;
-            --paper-line: #D9D4C4;
-            --brass: #B08A3E;
-            --brass-soft: #E4D2A4;
-            --teal: #2F5D5A;
-            --teal-soft: #DCE9E6;
-            --brick: #A3402E;
-            --brick-soft: #F2DCD6;
-            --moss: #4C7A47;
-            --moss-soft: #DCE8D6;
-            --shadow: 0 1px 2px rgba(21, 42, 59, .06), 0 8px 24px rgba(21, 42, 59, .08);
-            --radius: 14px;
-            font-size: 16px;
-        }
-        * {
-            box-sizing: border-box;
-        }
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background: var(--paper);
-            background-image: radial-gradient(circle at 1px 1px, rgba(21, 42, 59, .045) 1px, transparent 0);
-            background-size: 22px 22px;
-            color: var(--ink);
-            font-family: 'IBM Plex Sans', sans-serif;
-            min-height: 100vh;
-        }
-        ::selection {
-            background: var(--brass-soft);
-        }
-        h1,
-        h2,
-        h3,
-        .display {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            color: var(--ink);
-            margin: 0;
-        }
-        .mono {
-            font-family: 'IBM Plex Mono', monospace;
-        }
-        button {
-            font-family: inherit;
-            cursor: pointer;
-        }
-        input,
-        select,
-        textarea {
-            font-family: inherit;
-        }
-        a {
-            color: inherit;
-        }
-
-        #loadingScreen {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 14px;
-            background: var(--paper);
-            z-index: 999;
-        }
-        .loader-ring {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            border: 3px solid var(--paper-line);
-            border-top-color: var(--brass);
-            animation: spin 0.9s linear infinite;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        .loading-msg {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 13px;
-            color: var(--ink-soft);
-            letter-spacing: .02em;
-        }
-
-        #authScreen {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px 16px;
-        }
-        .auth-wrap {
-            width: 100%;
-            max-width: 920px;
-            display: grid;
-            grid-template-columns: 1.05fr 1fr;
-            background: var(--paper-raised);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            border: 1px solid var(--paper-line);
-        }
-        .auth-side {
-            background: linear-gradient(165deg, var(--ink) 0%, #1E3A50 60%, #234459 100%);
-            color: #F1ECDD;
-            padding: 44px 38px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            position: relative;
-            overflow: hidden;
-        }
-        .auth-side::after {
-            content: "";
-            position: absolute;
-            right: -60px;
-            bottom: -60px;
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            border: 1px solid rgba(241, 236, 221, .18);
-        }
-        .auth-side::before {
-            content: "";
-            position: absolute;
-            right: -10px;
-            bottom: -10px;
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            border: 1px solid rgba(241, 236, 221, .14);
-        }
-        .auth-mark {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 12px;
-            letter-spacing: .16em;
-            text-transform: uppercase;
-            color: var(--brass-soft);
-        }
-        .auth-title {
-            font-size: 38px;
-            line-height: 1.08;
-            margin-top: 18px;
-        }
-        .auth-title em {
-            font-style: italic;
-            color: var(--brass-soft);
-        }
-        .auth-sub {
-            margin-top: 14px;
-            font-size: 14.5px;
-            line-height: 1.55;
-            color: #CBD6DD;
-            max-width: 34ch;
-        }
-        .period-strip {
-            display: flex;
-            gap: 6px;
-            margin-top: 28px;
-            position: relative;
-            z-index: 1;
-        }
-        .period-chip {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10.5px;
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(241, 236, 221, .35);
-            color: #E8E2CE;
-        }
-        .auth-foot {
-            font-size: 11.5px;
-            color: #93A5AF;
-            position: relative;
-            z-index: 1;
-        }
-
-        .auth-main {
-            padding: 40px 38px;
-            display: flex;
-            flex-direction: column;
-        }
-        .auth-tabs {
-            display: flex;
-            gap: 4px;
-            background: var(--paper);
-            border-radius: 999px;
-            padding: 4px;
-            margin-bottom: 26px;
-            width: fit-content;
-        }
-        .auth-tab {
-            border: none;
-            background: transparent;
-            padding: 8px 18px;
-            border-radius: 999px;
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--ink-soft);
-        }
-        .auth-tab.active {
-            background: var(--ink);
-            color: #F1ECDD;
-        }
-        .field {
-            margin-bottom: 15px;
-        }
-        .field label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: var(--ink-soft);
-            margin-bottom: 6px;
-        }
-        .field input,
-        .field select,
-        .field textarea {
-            width: 100%;
-            padding: 11px 13px;
-            border-radius: 10px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 14.5px;
-            color: var(--ink);
-            outline: none;
-            transition: border-color .15s;
-        }
-        .field input:focus,
-        .field select:focus,
-        .field textarea:focus {
-            border-color: var(--brass);
-        }
-        .field-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .btn-primary {
-            margin-top: 8px;
-            width: 100%;
-            padding: 13px;
-            border-radius: 10px;
-            border: none;
-            background: var(--ink);
-            color: #F1ECDD;
-            font-weight: 600;
-            font-size: 14.5px;
-            letter-spacing: .01em;
-            transition: background .15s, transform .1s;
-        }
-        .btn-primary:hover {
-            background: #1E3A50;
-        }
-        .btn-primary:active {
-            transform: scale(.99);
-        }
-        .btn-secondary {
-            margin-top: 8px;
-            padding: 11px 20px;
-            border-radius: 10px;
-            border: 1px solid var(--paper-line);
-            background: var(--paper-raised);
-            color: var(--ink);
-            font-weight: 600;
-            font-size: 13px;
-            transition: background .15s;
-        }
-        .btn-secondary:hover {
-            background: var(--paper);
-        }
-        .btn-danger {
-            margin-top: 8px;
-            padding: 11px 20px;
-            border-radius: 10px;
-            border: none;
-            background: var(--brick);
-            color: #fff;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background .15s;
-        }
-        .btn-danger:hover {
-            background: #8a2e1e;
-        }
-        .btn-success {
-            margin-top: 8px;
-            padding: 11px 20px;
-            border-radius: 10px;
-            border: none;
-            background: var(--moss);
-            color: #fff;
-            font-weight: 600;
-            font-size: 13px;
-            transition: background .15s;
-        }
-        .btn-success:hover {
-            background: #3a5f36;
-        }
-        .auth-error {
-            margin-top: 12px;
-            font-size: 13px;
-            color: var(--brick);
-            background: var(--brick-soft);
-            padding: 9px 12px;
-            border-radius: 8px;
-            display: none;
-        }
-        .auth-hint {
-            margin-top: 16px;
-            font-size: 11.5px;
-            color: #8B8676;
-            line-height: 1.5;
-        }
-
-        #app {
-            display: none;
-            min-height: 100vh;
-        }
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 28px;
-            border-bottom: 1px solid var(--paper-line);
-            background: var(--paper-raised);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .brand-mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            background: var(--ink);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--brass-soft);
-            font-family: 'Fraunces', serif;
-            font-weight: 700;
-        }
-        .brand-name {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 17px;
-        }
-        .brand-sub {
-            font-size: 11px;
-            color: var(--ink-soft);
-            font-family: 'IBM Plex Mono', monospace;
-            letter-spacing: .04em;
-        }
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .user-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--paper);
-            border-radius: 999px;
-            padding: 6px 6px 6px 14px;
-            cursor: pointer;
-            transition: background .15s;
-        }
-        .user-pill:hover {
-            background: var(--paper-line);
-        }
-        .user-pill-name {
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .user-pill-branch {
-            font-size: 11px;
-            color: var(--ink-soft);
-        }
-        .avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--brass);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            font-family: 'IBM Plex Mono', monospace;
-        }
-        .btn-ghost {
-            border: 1px solid var(--paper-line);
-            background: transparent;
-            padding: 8px 14px;
-            border-radius: 999px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--ink-soft);
-        }
-        .btn-ghost:hover {
-            border-color: var(--ink-soft);
-            color: var(--ink);
-        }
-        .btn-chess {
-            display: inline-flex;
-            align-items: center;
-            text-decoration: none;
-            border: 1px solid var(--brass);
-            background: var(--brass-soft);
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--ink);
-        }
-        .btn-chess:hover {
-            background: var(--brass);
-            color: #fff;
-        }
-        .btn-admin {
-            border: 1px solid var(--brass);
-            background: var(--brass-soft);
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--ink);
-        }
-        .btn-admin:hover {
-            background: var(--brass);
-            color: #fff;
-        }
-        .btn-request-admin {
-            border: 1px solid var(--teal);
-            background: var(--teal-soft);
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--teal);
-        }
-        .btn-request-admin:hover {
-            background: var(--teal);
-            color: #fff;
-        }
-        .btn-download-app {
-            border: 1px solid var(--moss);
-            background: var(--moss-soft);
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--moss);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-download-app:hover {
-            background: var(--moss);
-            color: #fff;
-        }
-        .btn-icon {
-            border: 1px solid var(--paper-line);
-            background: transparent;
-            width: 36px;
-            height: 36px;
-            border-radius: 999px;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transition: background .15s;
-        }
-        .btn-icon:hover {
-            background: var(--paper);
-        }
-        .badge-dot {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: var(--brick);
-            color: #fff;
-            border-radius: 999px;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 6px;
-            min-width: 16px;
-            text-align: center;
-            line-height: 1.2;
-            border: 1px solid var(--paper-raised);
-        }
-
-        .shell {
-            max-width: 1180px;
-            margin: 0 auto;
-            padding: 28px;
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
-        .shell-grid {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 22px;
-        }
-        @media (max-width: 920px) {
-            .shell-grid {
-                grid-template-columns: 1fr;
-                padding: 0;
-            }
-            .shell {
-                padding: 16px;
-            }
-        }
-
-        .card {
-            background: var(--paper-raised);
-            border: 1px solid var(--paper-line);
-            border-radius: var(--radius);
-            padding: 22px;
-            box-shadow: var(--shadow);
-        }
-        .card+.card {
-            margin-top: 22px;
-        }
-        .card-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .card-eyebrow {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: var(--brass);
-            margin-bottom: 4px;
-        }
-        .card-title {
-            font-size: 20px;
-        }
-        .tabbar {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            border: none;
-            background: var(--paper);
-            padding: 6px 13px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ink-soft);
-        }
-        .tab-btn.active {
-            background: var(--ink);
-            color: #F1ECDD;
-        }
-
-        .rail {
-            position: relative;
-            padding-left: 34px;
-        }
-        .rail::before {
-            content: "";
-            position: absolute;
-            left: 12px;
-            top: 6px;
-            bottom: 6px;
-            width: 1px;
-            background: var(--paper-line);
-        }
-        .rail-item {
-            position: relative;
-            padding-bottom: 16px;
-        }
-        .rail-item:last-child {
-            padding-bottom: 0;
-        }
-        .rail-dot {
-            position: absolute;
-            left: -34px;
-            top: 2px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: var(--paper);
-            border: 1.5px solid var(--paper-line);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 9.5px;
-            font-weight: 600;
-            color: var(--ink-soft);
-        }
-        .rail-item.now .rail-dot {
-            background: var(--brass);
-            border-color: var(--brass);
-            color: #fff;
-            box-shadow: 0 0 0 4px var(--brass-soft);
-        }
-        .rail-item.done .rail-dot {
-            background: var(--ink);
-            border-color: var(--ink);
-            color: #F1ECDD;
-        }
-        .rail-item.lunch .rail-dot {
-            opacity: .5;
-        }
-        .rail-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            background: var(--paper);
-            border-radius: 10px;
-            padding: 10px 13px;
-            flex-wrap: wrap;
-        }
-        .rail-item.now .rail-row {
-            background: var(--brass-soft);
-        }
-        .rail-item.lunch .rail-row {
-            background: transparent;
-            padding: 4px 13px;
-        }
-        .rail-subject {
-            font-size: 13.5px;
-            font-weight: 600;
-        }
-        .rail-meta {
-            font-size: 11px;
-            color: var(--ink-soft);
-            margin-top: 2px;
-        }
-        .rail-time {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            color: var(--ink-soft);
-            white-space: nowrap;
-        }
-        .rail-actions {
-            display: flex;
-            gap: 5px;
-        }
-        .mini-btn {
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            width: 26px;
-            height: 26px;
-            border-radius: 7px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .mini-btn.present.active {
-            background: var(--moss);
-            border-color: var(--moss);
-            color: #fff;
-        }
-        .mini-btn.absent.active {
-            background: var(--brick);
-            border-color: var(--brick);
-            color: #fff;
-        }
-        .status-tag {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 999px;
-            font-weight: 600;
-        }
-        .status-tag.present {
-            background: var(--moss-soft);
-            color: var(--moss);
-        }
-        .status-tag.absent {
-            background: var(--brick-soft);
-            color: var(--brick);
-        }
-
-        .stat-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 13px;
-        }
-        .stat-row:last-child {
-            margin-bottom: 0;
-        }
-        .stat-label {
-            width: 150px;
-            font-size: 12.5px;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-        .stat-bar-track {
-            flex: 1;
-            height: 8px;
-            background: var(--paper);
-            border-radius: 999px;
-            overflow: hidden;
-        }
-        .stat-bar-fill {
-            height: 100%;
-            border-radius: 999px;
-            background: var(--teal);
-            transition: width .4s ease;
-        }
-        .stat-bar-fill.warn {
-            background: var(--brass);
-        }
-        .stat-bar-fill.danger {
-            background: var(--brick);
-        }
-        .stat-pct {
-            width: 42px;
-            text-align: right;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 12px;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .overall-ring-wrap {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px dashed var(--paper-line);
-        }
-        .overall-num {
-            font-family: 'Fraunces', serif;
-            font-size: 40px;
-            font-weight: 600;
-        }
-        .overall-sub {
-            font-size: 12px;
-            color: var(--ink-soft);
-            margin-top: 2px;
-        }
-
-        .leave-line {
-            font-size: 11px;
-            margin-top: 3px;
-            font-family: 'IBM Plex Mono', monospace;
-        }
-        .leave-line.ok {
-            color: var(--moss);
-        }
-        .leave-line.warn {
-            color: var(--brick);
-        }
-        .leave-line.neutral {
-            color: var(--ink-soft);
-        }
-        .overall-leave {
-            margin-top: 10px;
-            padding: 11px 13px;
-            border-radius: 10px;
-            background: var(--paper);
-            font-size: 12.5px;
-            line-height: 1.5;
-        }
-        .overall-leave b {
-            font-family: 'IBM Plex Mono', monospace;
-        }
-        .target-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .target-row label {
-            font-size: 11px;
-            color: var(--ink-soft);
-            font-weight: 600;
-        }
-        .target-row select {
-            padding: 5px 8px;
-            border-radius: 7px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 12px;
-        }
-
-        .event-item {
-            display: flex;
-            gap: 13px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--paper-line);
-        }
-        .event-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        .event-date {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            color: #fff;
-            background: var(--ink);
-            border-radius: 8px;
-            padding: 7px 6px;
-            text-align: center;
-            width: 52px;
-            flex-shrink: 0;
-            line-height: 1.25;
-        }
-        .event-date .d {
-            font-size: 15px;
-            font-weight: 700;
-            display: block;
-        }
-        .event-title {
-            font-size: 13.5px;
-            font-weight: 600;
-            line-height: 1.35;
-        }
-        .event-range {
-            font-size: 11px;
-            color: var(--ink-soft);
-            margin-top: 2px;
-        }
-        .event-badge {
-            display: inline-block;
-            margin-top: 5px;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 9.5px;
-            padding: 2px 7px;
-            border-radius: 999px;
-            background: var(--teal-soft);
-            color: var(--teal);
-        }
-        .event-badge.today {
-            background: var(--brass-soft);
-            color: #8a6a26;
-        }
-
-        .week-grid {
-            display: grid;
-            grid-template-columns: 44px repeat(5, 1fr);
-            gap: 4px;
-            font-size: 10.5px;
-        }
-        .week-grid .wh {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            text-align: center;
-            color: var(--ink-soft);
-            padding: 4px 0;
-            font-weight: 600;
-        }
-        .week-cell {
-            background: var(--paper);
-            border-radius: 6px;
-            padding: 5px 4px;
-            min-height: 38px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .week-cell.p {
-            background: var(--teal-soft);
-        }
-        .week-cell .wc-code {
-            font-weight: 700;
-            font-size: 9.5px;
-        }
-        .week-cell .wc-type {
-            font-size: 8px;
-            color: var(--ink-soft);
-        }
-        .week-per {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 9.5px;
-            color: var(--ink-soft);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .empty-note {
-            font-size: 12.5px;
-            color: var(--ink-soft);
-            font-style: italic;
-        }
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        footer.app-foot {
-            text-align: center;
-            padding: 24px;
-            font-size: 11px;
-            color: #8B8676;
-            font-family: 'IBM Plex Mono', monospace;
-        }
-
-        .admin-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(21, 42, 59, .55);
-            backdrop-filter: blur(6px);
-            z-index: 100;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .admin-overlay.open {
-            display: flex;
-        }
-        .admin-panel {
-            background: var(--paper-raised);
-            border-radius: 20px;
-            max-width: 1100px;
-            width: 100%;
-            max-height: 92vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 24px 60px rgba(21, 42, 59, .25);
-            border: 1px solid var(--paper-line);
-            overflow: hidden;
-        }
-        .admin-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 28px;
-            border-bottom: 1px solid var(--paper-line);
-            background: var(--paper);
-            flex-shrink: 0;
-        }
-        .admin-panel-header h2 {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 20px;
-        }
-        .admin-panel-header .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--ink-soft);
-            padding: 4px 10px;
-            border-radius: 8px;
-        }
-        .admin-panel-header .close-btn:hover {
-            background: var(--paper-line);
-        }
-
-        .admin-tabs {
-            display: flex;
-            gap: 4px;
-            padding: 12px 28px 0 28px;
-            border-bottom: 1px solid var(--paper-line);
-            background: var(--paper-raised);
-            flex-shrink: 0;
-            flex-wrap: wrap;
-        }
-        .admin-tab {
-            border: none;
-            background: transparent;
-            padding: 10px 18px;
-            border-radius: 10px 10px 0 0;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--ink-soft);
-            transition: background .15s;
-        }
-        .admin-tab:hover {
-            background: var(--paper);
-        }
-        .admin-tab.active {
-            background: var(--ink);
-            color: #F1ECDD;
-        }
-
-        .admin-panel-body {
-            padding: 24px 28px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .admin-panel-body .tab-content {
-            display: none;
-        }
-        .admin-panel-body .tab-content.active {
-            display: block;
-        }
-
-        .admin-card {
-            background: var(--paper);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 14px;
-            border: 1px solid var(--paper-line);
-        }
-        .admin-card .row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .admin-card .row .left {
-            flex: 1;
-        }
-        .admin-card .row .left .title {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .admin-card .row .left .sub {
-            font-size: 12px;
-            color: var(--ink-soft);
-        }
-        .admin-card .actions {
-            display: flex;
-            gap: 8px;
-        }
-        .admin-card .actions .btn-sm {
-            padding: 6px 14px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            font-size: 12px;
-        }
-        .btn-sm.approve {
-            background: var(--moss);
-            color: #fff;
-        }
-        .btn-sm.reject {
-            background: var(--brick);
-            color: #fff;
-        }
-        .btn-sm.edit {
-            background: var(--brass);
-            color: #fff;
-        }
-        .btn-sm.delete {
-            background: var(--brick-soft);
-            color: var(--brick);
-        }
-        .btn-sm.pin {
-            background: var(--brass-soft);
-            color: var(--ink);
-        }
-
-        .admin-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 16px;
-        }
-        .admin-form .full {
-            grid-column: 1 / -1;
-        }
-        .admin-form label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: var(--ink-soft);
-            display: block;
-            margin-bottom: 4px;
-        }
-        .admin-form input,
-        .admin-form select,
-        .admin-form textarea {
-            width: 100%;
-            padding: 9px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 13px;
-            color: var(--ink);
-        }
-        .admin-form textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-        .admin-form .btn-primary {
-            width: auto;
-            padding: 10px 24px;
-            margin-top: 0;
-        }
-        .admin-form .btn-secondary {
-            margin-top: 0;
-            padding: 10px 24px;
-        }
-        .admin-form .form-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            grid-column: 1 / -1;
-            flex-wrap: wrap;
-        }
-
-        .badge-pending {
-            background: var(--brass-soft);
-            color: #8a6a26;
-            padding: 2px 10px;
-            border-radius: 999px;
-            font-size: 10.5px;
-            font-weight: 600;
-        }
-        .badge-approved {
-            background: var(--moss-soft);
-            color: var(--moss);
-            padding: 2px 10px;
-            border-radius: 999px;
-            font-size: 10.5px;
-            font-weight: 600;
-        }
-        .badge-rejected {
-            background: var(--brick-soft);
-            color: var(--brick);
-            padding: 2px 10px;
-            border-radius: 999px;
-            font-size: 10.5px;
-            font-weight: 600;
-        }
-
-        .post-item {
-            border-left: 3px solid var(--brass);
-            padding-left: 14px;
-            margin-bottom: 16px;
-        }
-        .post-item.pinned {
-            border-left-color: var(--brick);
-        }
-        .post-item .post-title {
-            font-weight: 600;
-            font-size: 14.5px;
-        }
-        .post-item .post-meta {
-            font-size: 11px;
-            color: var(--ink-soft);
-        }
-        .post-item .post-content {
-            font-size: 13px;
-            margin-top: 4px;
-            white-space: pre-wrap;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: var(--ink);
-            color: #F1ECDD;
-            padding: 14px 24px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            font-size: 13px;
-            z-index: 200;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity .25s, transform .25s;
-            pointer-events: none;
-            max-width: 400px;
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .history-nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-        .history-nav .date-display {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 18px;
-            min-width: 150px;
-            text-align: center;
-            color: var(--ink);
-        }
-        .history-nav .nav-btn {
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background .15s;
-            color: var(--ink-soft);
-        }
-        .history-nav .nav-btn:hover {
-            background: var(--paper);
-        }
-        .history-nav .nav-btn.today-btn {
-            width: auto;
-            padding: 0 14px;
-            font-size: 11px;
-            font-weight: 600;
-            font-family: 'IBM Plex Sans', sans-serif;
-            border-color: var(--brass);
-            color: var(--brass);
-            background: var(--brass-soft);
-        }
-        .history-nav .nav-btn.today-btn:hover {
-            background: var(--brass);
-            color: #fff;
-        }
-        .history-nav .nav-btn:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-        }
-        .history-summary {
-            display: flex;
-            gap: 20px;
-            padding: 10px 14px;
-            background: var(--paper);
-            border-radius: 10px;
-            margin-bottom: 14px;
-            font-size: 13px;
-        }
-        .history-summary .hstat {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-        .history-summary .hstat .num {
-            font-weight: 700;
-            font-size: 16px;
-            font-family: 'Fraunces', serif;
-        }
-        .history-summary .hstat .num.present {
-            color: var(--moss);
-        }
-        .history-summary .hstat .num.absent {
-            color: var(--brick);
-        }
-        .history-summary .hstat .lbl {
-            font-size: 11px;
-            color: var(--ink-soft);
-        }
-        .history-empty {
-            padding: 20px 0;
-            text-align: center;
-            color: var(--ink-soft);
-            font-style: italic;
-            font-size: 13px;
-        }
-        .history-actions .mini-btn {
-            width: 28px;
-            height: 28px;
-            font-size: 14px;
-        }
-        .holiday-banner {
-            background: var(--brass-soft);
-            color: var(--ink);
-            padding: 10px 14px;
-            border-radius: 10px;
-            margin: 8px 0;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .profile-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(21, 42, 59, .55);
-            backdrop-filter: blur(6px);
-            z-index: 150;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .profile-overlay.open {
-            display: flex;
-        }
-        .profile-panel {
-            background: var(--paper-raised);
-            border-radius: 20px;
-            max-width: 480px;
-            width: 100%;
-            padding: 28px 32px;
-            box-shadow: 0 24px 60px rgba(21, 42, 59, .25);
-            border: 1px solid var(--paper-line);
-        }
-        .profile-panel h2 {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 22px;
-            margin-bottom: 16px;
-        }
-        .profile-panel .close-btn {
-            float: right;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--ink-soft);
-        }
-        .profile-panel .field {
-            margin-bottom: 18px;
-        }
-        .profile-panel .field label {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: var(--ink-soft);
-            display: block;
-            margin-bottom: 4px;
-        }
-        .profile-panel .field input,
-        .profile-panel .field select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 14px;
-            color: var(--ink);
-        }
-        .profile-panel hr {
-            margin: 16px 0;
-            border: none;
-            border-top: 1px solid var(--paper-line);
-        }
-
-        .feedback-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(21, 42, 59, .55);
-            backdrop-filter: blur(6px);
-            z-index: 160;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .feedback-overlay.open {
-            display: flex;
-        }
-        .feedback-panel {
-            background: var(--paper-raised);
-            border-radius: 20px;
-            max-width: 640px;
-            width: 100%;
-            max-height: 92vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 24px 60px rgba(21, 42, 59, .25);
-            border: 1px solid var(--paper-line);
-            overflow: hidden;
-        }
-        .feedback-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 28px;
-            border-bottom: 1px solid var(--paper-line);
-            background: var(--paper);
-            flex-shrink: 0;
-        }
-        .feedback-panel-header h2 {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 20px;
-        }
-        .feedback-panel-header .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--ink-soft);
-            padding: 4px 10px;
-            border-radius: 8px;
-        }
-        .feedback-panel-header .close-btn:hover {
-            background: var(--paper-line);
-        }
-        .feedback-panel-body {
-            padding: 24px 28px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .feedback-list-item {
-            border: 1px solid var(--paper-line);
-            border-radius: 12px;
-            padding: 16px 18px;
-            margin-bottom: 14px;
-            background: var(--paper);
-            transition: border-color .15s;
-        }
-        .feedback-list-item:hover {
-            border-color: var(--brass-soft);
-        }
-        .feedback-list-item .fb-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .feedback-list-item .fb-ticket {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            color: var(--brass);
-            font-weight: 600;
-        }
-        .feedback-list-item .fb-subject {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .feedback-list-item .fb-meta {
-            font-size: 11px;
-            color: var(--ink-soft);
-            margin-top: 4px;
-        }
-        .feedback-list-item .fb-message {
-            font-size: 13px;
-            margin-top: 6px;
-            color: var(--ink-soft);
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .feedback-list-item .fb-reply {
-            margin-top: 10px;
-            padding: 10px 14px;
-            background: var(--paper-raised);
-            border-radius: 8px;
-            border-left: 3px solid var(--teal);
-            font-size: 13px;
-        }
-        .feedback-list-item .fb-reply-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: var(--teal);
-            font-weight: 600;
-        }
-        .feedback-list-item .fb-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .fb-status-badge {
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 12px;
-            border-radius: 999px;
-            display: inline-block;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-        .fb-status-open {
-            background: #FEF3C7;
-            color: #92400E;
-        }
-        .fb-status-in_progress {
-            background: #DBEAFE;
-            color: #1E40AF;
-        }
-        .fb-status-resolved {
-            background: #D1FAE5;
-            color: #065F46;
-        }
-        .fb-status-closed {
-            background: #E5E7EB;
-            color: #374151;
-        }
-        .fb-priority-high {
-            color: var(--brick);
-            font-weight: 600;
-        }
-        .fb-priority-medium {
-            color: var(--brass);
-            font-weight: 600;
-        }
-        .fb-priority-low {
-            color: var(--ink-soft);
-            font-weight: 600;
-        }
-        .fb-attachment-link {
-            display: inline-block;
-            margin-top: 6px;
-            font-size: 12px;
-            color: var(--teal);
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .feedback-empty {
-            padding: 32px 0;
-            text-align: center;
-            color: var(--ink-soft);
-            font-style: italic;
-            font-size: 13px;
-        }
-        .feedback-highlight {
-            border-left: 4px solid var(--brass);
-            background: var(--paper);
-            box-shadow: var(--shadow);
-        }
-        .feedback-rating-stars {
-            display: flex;
-            gap: 6px;
-            font-size: 28px;
-            cursor: pointer;
-            user-select: none;
-            margin: 8px 0 4px;
-        }
-        .feedback-rating-stars span {
-            transition: transform .1s, color .1s;
-        }
-        .feedback-rating-stars span:hover {
-            transform: scale(1.15);
-        }
-        .feedback-rating-stars .star-off {
-            color: #D9D4C4;
-        }
-        .feedback-rating-stars .star-on {
-            color: #F59E0B;
-        }
-        .fb-admin-table-wrap {
-            overflow-x: auto;
-            max-height: 540px;
-            overflow-y: auto;
-        }
-        .fb-admin-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12.5px;
-        }
-        .fb-admin-table th {
-            background: var(--ink);
-            color: #F1ECDD;
-            padding: 10px 8px;
-            text-align: left;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            white-space: nowrap;
-        }
-        .fb-admin-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid var(--paper-line);
-            vertical-align: top;
-        }
-        .fb-admin-table tr:hover td {
-            background: var(--paper);
-        }
-        .fb-admin-table .fb-admin-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-        .fb-admin-table .btn-sm {
-            padding: 4px 10px;
-            font-size: 10.5px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .fb-admin-table .btn-sm.reply-btn {
-            background: var(--teal-soft);
-            color: var(--teal);
-        }
-        .fb-admin-table .btn-sm.reply-btn:hover {
-            background: var(--teal);
-            color: #fff;
-        }
-        .fb-admin-table .btn-sm.status-btn {
-            background: var(--brass-soft);
-            color: var(--ink);
-        }
-        .fb-admin-table .btn-sm.status-btn:hover {
-            background: var(--brass);
-            color: #fff;
-        }
-        .fb-admin-table .btn-sm.del-btn {
-            background: var(--brick-soft);
-            color: var(--brick);
-        }
-        .fb-admin-table .btn-sm.del-btn:hover {
-            background: var(--brick);
-            color: #fff;
-        }
-
-        .fb-admin-search {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-        .fb-admin-search input,
-        .fb-admin-search select {
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 12.5px;
-            color: var(--ink);
-            outline: none;
-        }
-        .fb-admin-search input:focus,
-        .fb-admin-search select:focus {
-            border-color: var(--brass);
-        }
-        .fb-admin-search .search-box {
-            flex: 1;
-            min-width: 180px;
-        }
-        .fb-admin-filters {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .fb-admin-filters .filter-btn {
-            padding: 5px 14px;
-            border-radius: 999px;
-            border: 1px solid var(--paper-line);
-            background: var(--paper-raised);
-            font-size: 11.5px;
-            font-weight: 600;
-            color: var(--ink-soft);
-            transition: background .15s;
-        }
-        .fb-admin-filters .filter-btn.active {
-            background: var(--ink);
-            color: #F1ECDD;
-            border-color: var(--ink);
-        }
-        .fb-admin-filters .filter-btn:hover {
-            background: var(--paper);
-        }
-
-        .fb-pagination {
-            display: flex;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-        .fb-pagination .page-btn {
-            padding: 4px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--paper-line);
-            background: var(--paper-raised);
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ink-soft);
-            transition: background .15s;
-        }
-        .fb-pagination .page-btn.active {
-            background: var(--ink);
-            color: #F1ECDD;
-            border-color: var(--ink);
-        }
-        .fb-pagination .page-btn:hover {
-            background: var(--paper);
-        }
-        .fb-pagination .page-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .fb-reply-modal .reply-textarea {
-            width: 100%;
-            min-height: 80px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 13px;
-            color: var(--ink);
-            resize: vertical;
-            outline: none;
-            font-family: inherit;
-        }
-        .fb-reply-modal .reply-textarea:focus {
-            border-color: var(--brass);
-        }
-        .fb-reply-modal .reply-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-        .fb-reply-modal .reply-actions .btn-primary {
-            width: auto;
-            padding: 10px 24px;
-            margin: 0;
-        }
-
-        .rating-stars-display {
-            display: flex;
-            gap: 4px;
-            font-size: 22px;
-        }
-        .rating-stars-display .star-on {
-            color: #F59E0B;
-        }
-        .rating-stars-display .star-off {
-            color: #D9D4C4;
-        }
-
-        .community-post {
-            padding: 16px 0;
-            border-bottom: 1px solid var(--paper-line);
-        }
-        .community-post:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        .community-post .cp-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .community-post .cp-author {
-            font-weight: 600;
-            font-size: 13px;
-        }
-        .community-post .cp-author span {
-            font-weight: 400;
-            color: var(--ink-soft);
-            font-size: 11px;
-        }
-        .community-post .cp-title {
-            font-weight: 600;
-            font-size: 15px;
-            margin-top: 4px;
-            color: var(--ink);
-        }
-        .community-post .cp-body {
-            font-size: 13px;
-            color: var(--ink-soft);
-            margin-top: 4px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .community-post .cp-image {
-            margin-top: 8px;
-            max-width: 100%;
-            border-radius: 10px;
-            border: 1px solid var(--paper-line);
-            max-height: 300px;
-            object-fit: cover;
-        }
-        .community-post .cp-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-top: 8px;
-            flex-wrap: wrap;
-        }
-        .community-post .cp-like-btn {
-            border: none;
-            background: none;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            color: var(--ink-soft);
-            transition: color .15s;
-            padding: 4px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .community-post .cp-like-btn:hover {
-            background: var(--paper);
-        }
-        .community-post .cp-like-btn.liked {
-            color: var(--brick);
-        }
-        .community-post .cp-like-btn.liked:hover {
-            background: var(--brick-soft);
-        }
-        .community-post .cp-like-count {
-            font-size: 12px;
-            font-weight: 600;
-            min-width: 20px;
-        }
-        .community-post .cp-delete-btn {
-            border: none;
-            background: none;
-            font-size: 12px;
-            color: var(--brick-soft);
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
-        }
-        .community-post .cp-delete-btn:hover {
-            background: var(--brick-soft);
-            color: var(--brick);
-        }
-        .community-post .cp-time {
-            font-size: 10px;
-            color: var(--ink-soft);
-            font-family: 'IBM Plex Mono', monospace;
-        }
-        .community-post .cp-admin-badge {
-            font-size: 9px;
-            background: var(--brass-soft);
-            color: var(--brass);
-            padding: 1px 8px;
-            border-radius: 999px;
-            font-weight: 600;
-            margin-left: 6px;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .cp-modal textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        .cp-modal .cp-image-preview {
-            margin-top: 8px;
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
-            border: 1px solid var(--paper-line);
-        }
-
-        /* --- NEW SYLLABUS STYLES --- */
-        .syllabus-card {
-            background: var(--paper-raised);
-            border: 1px solid var(--paper-line);
-            border-radius: var(--radius);
-            padding: 22px;
-            box-shadow: var(--shadow);
-            margin-top: 22px;
-        }
-        .syllabus-card .card-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .syllabus-branch-selector {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-            align-items: end;
-        }
-        .syllabus-branch-selector .field {
-            margin-bottom: 0;
-            flex: 1;
-            min-width: 160px;
-        }
-        .syllabus-branch-selector .field label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            color: var(--ink-soft);
-            display: block;
-            margin-bottom: 4px;
-        }
-        .syllabus-branch-selector .field select {
-            width: 100%;
-            padding: 8px 10px;
-            border-radius: 8px;
-            border: 1px solid var(--paper-line);
-            background: #fff;
-            font-size: 13px;
-            color: var(--ink);
-            outline: none;
-        }
-        .syllabus-branch-selector .field select:focus {
-            border-color: var(--brass);
-        }
-        .syllabus-content {
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--ink);
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        .syllabus-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 12px 0;
-            font-size: 12.5px;
-        }
-        .syllabus-content th,
-        .syllabus-content td {
-            border: 1px solid var(--paper-line);
-            padding: 8px 10px;
-            text-align: left;
-            vertical-align: top;
-        }
-        .syllabus-content th {
-            background: var(--ink);
-            color: #F1ECDD;
-            font-weight: 600;
-        }
-        .syllabus-content tr:nth-child(even) {
-            background: var(--paper);
-        }
-        .syllabus-content h3,
-        .syllabus-content h4 {
-            font-family: 'Fraunces', serif;
-            margin: 16px 0 8px 0;
-            color: var(--ink);
-        }
-        .syllabus-content h3 {
-            font-size: 18px;
-            border-bottom: 1px solid var(--paper-line);
-            padding-bottom: 4px;
-        }
-        .syllabus-content h4 {
-            font-size: 15px;
-        }
-        .syllabus-content ul,
-        .syllabus-content ol {
-            padding-left: 22px;
-            margin: 6px 0;
-        }
-        .syllabus-content code {
-            font-family: 'IBM Plex Mono', monospace;
-            background: var(--paper);
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        .syllabus-content .subject-code {
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 600;
-            color: var(--brass);
-        }
-        .syllabus-loading {
-            text-align: center;
-            padding: 30px 0;
-            color: var(--ink-soft);
-            font-style: italic;
-        }
-
-        /* ===== LEDGER AI CHAT STYLES ===== */
-        .ledger-ai-fab {
-            position: fixed;
-            bottom: 28px;
-            right: 28px;
-            z-index: 300;
-            width: 62px;
-            height: 62px;
-            border-radius: 50%;
-            background: var(--ink);
-            color: #F1ECDD;
-            border: none;
-            box-shadow: 0 6px 24px rgba(21, 42, 59, .28);
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform .2s, box-shadow .2s, background .2s;
-            cursor: pointer;
-            padding: 0;
-        }
-        .ledger-ai-fab:hover {
-            transform: scale(1.06);
-            box-shadow: 0 8px 32px rgba(21, 42, 59, .35);
-            background: #1E3A50;
-        }
-        .ledger-ai-fab .badge-dot {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: var(--brick);
-            color: #fff;
-            border-radius: 999px;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 6px;
-            min-width: 18px;
-            text-align: center;
-            line-height: 1.3;
-            border: 2px solid var(--paper);
-            display: none;
-        }
-        .ledger-ai-fab .badge-dot.show {
-            display: block;
-        }
-
-        .ledger-ai-chat {
-            position: fixed;
-            bottom: 100px;
-            right: 28px;
-            width: 400px;
-            max-width: calc(100vw - 40px);
-            max-height: 600px;
-            height: min(600px, 70vh);
-            background: var(--paper-raised);
-            border-radius: 18px;
-            box-shadow: 0 12px 48px rgba(21, 42, 59, .22);
-            border: 1px solid var(--paper-line);
-            display: flex;
-            flex-direction: column;
-            z-index: 301;
-            overflow: hidden;
-            transform-origin: bottom right;
-            transition: opacity .2s, transform .2s;
-            opacity: 0;
-            transform: scale(0.96) translateY(12px);
-            pointer-events: none;
-        }
-        .ledger-ai-chat.open {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            pointer-events: auto;
-        }
-
-        .ledger-ai-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 20px;
-            background: var(--ink);
-            color: #F1ECDD;
-            flex-shrink: 0;
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
-        }
-        .ledger-ai-header .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .ledger-ai-header .brand .icon {
-            font-size: 22px;
-        }
-        .ledger-ai-header .brand .title {
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 17px;
-        }
-        .ledger-ai-header .brand .sub {
-            font-size: 10px;
-            opacity: .7;
-            font-family: 'IBM Plex Mono', monospace;
-        }
-        .ledger-ai-header .actions {
-            display: flex;
-            gap: 6px;
-        }
-        .ledger-ai-header .actions button {
-            background: rgba(255, 255, 255, .08);
-            border: none;
-            border-radius: 8px;
-            color: #F1ECDD;
-            width: 32px;
-            height: 32px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background .15s;
-        }
-        .ledger-ai-header .actions button:hover {
-            background: rgba(255, 255, 255, .18);
-        }
-
-        .ledger-ai-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            background: var(--paper);
-            min-height: 0;
-        }
-        .ledger-ai-messages .message {
-            max-width: 88%;
-            padding: 10px 14px;
-            border-radius: 14px;
-            font-size: 13.5px;
-            line-height: 1.55;
-            word-break: break-word;
-            animation: msgSlide .2s ease;
-        }
-        .ledger-ai-messages .message.user {
-            align-self: flex-end;
-            background: var(--ink);
-            color: #F1ECDD;
-            border-bottom-right-radius: 4px;
-        }
-        .ledger-ai-messages .message.ai {
-            align-self: flex-start;
-            background: var(--paper-raised);
-            border: 1px solid var(--paper-line);
-            color: var(--ink);
-            border-bottom-left-radius: 4px;
-        }
-        .ledger-ai-messages .message.ai p {
-            margin: 4px 0;
-        }
-        .ledger-ai-messages .message.ai ul,
-        .ledger-ai-messages .message.ai ol {
-            padding-left: 20px;
-            margin: 4px 0;
-        }
-        .ledger-ai-messages .message.ai code {
-            font-family: 'IBM Plex Mono', monospace;
-            background: var(--paper);
-            padding: 1px 5px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        .ledger-ai-messages .message.ai pre {
-            background: var(--paper);
-            padding: 8px 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-size: 12px;
-            font-family: 'IBM Plex Mono', monospace;
-            border: 1px solid var(--paper-line);
-            margin: 4px 0;
-            white-space: pre-wrap;
-        }
-        .ledger-ai-messages .message.ai strong {
-            font-weight: 700;
-        }
-        .ledger-ai-messages .message.ai em {
-            font-style: italic;
-        }
-        .ledger-ai-messages .empty-state {
-            text-align: center;
-            color: var(--ink-soft);
-            font-size: 13px;
-            padding: 28px 0 12px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        .ledger-ai-messages .empty-state .big-icon {
-            font-size: 40px;
-            margin-bottom: 6px;
-        }
-        .ledger-ai-messages .empty-state .sub {
-            font-size: 12px;
-            opacity: .7;
-        }
-        .ledger-ai-messages .typing-indicator {
-            align-self: flex-start;
-            background: var(--paper-raised);
-            border: 1px solid var(--paper-line);
-            border-radius: 14px;
-            border-bottom-left-radius: 4px;
-            padding: 10px 16px;
-            display: flex;
-            gap: 4px;
-            align-items: center;
-            font-size: 13px;
-            color: var(--ink-soft);
-            animation: msgSlide .2s ease;
-        }
-        .ledger-ai-messages .typing-indicator .dots {
-            display: flex;
-            gap: 3px;
-        }
-        .ledger-ai-messages .typing-indicator .dots span {
-            width: 6px;
-            height: 6px;
-            background: var(--ink-soft);
-            border-radius: 50%;
-            animation: dotBounce 1.2s infinite;
-        }
-        .ledger-ai-messages .typing-indicator .dots span:nth-child(2) {
-            animation-delay: .2s;
-        }
-        .ledger-ai-messages .typing-indicator .dots span:nth-child(3) {
-            animation-delay: .4s;
-        }
-        @keyframes dotBounce {
-            0%,
-            60%,
-            100% {
-                transform: translateY(0);
-            }
-            30% {
-                transform: translateY(-6px);
-            }
-        }
-        @keyframes msgSlide {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .ledger-ai-input {
-            display: flex;
-            gap: 8px;
-            padding: 12px 16px;
-            border-top: 1px solid var(--paper-line);
-            background: var(--paper-raised);
-            flex-shrink: 0;
-            align-items: flex-end;
-        }
-        .ledger-ai-input textarea {
-            flex: 1;
-            resize: none;
-            border: 1px solid var(--paper-line);
-            border-radius: 10px;
-            padding: 10px 12px;
-            font-size: 13.5px;
-            font-family: inherit;
-            background: #fff;
-            color: var(--ink);
-            outline: none;
-            min-height: 44px;
-            max-height: 120px;
-            transition: border-color .15s;
-            line-height: 1.4;
-        }
-        .ledger-ai-input textarea:focus {
-            border-color: var(--brass);
-        }
-        .ledger-ai-input textarea::placeholder {
-            color: #B7B2A0;
-        }
-        .ledger-ai-input .send-btn {
-            background: var(--ink);
-            border: none;
-            border-radius: 10px;
-            color: #F1ECDD;
-            width: 44px;
-            height: 44px;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: background .15s, transform .1s;
-        }
-        .ledger-ai-input .send-btn:hover {
-            background: #1E3A50;
-        }
-        .ledger-ai-input .send-btn:active {
-            transform: scale(.94);
-        }
-        .ledger-ai-input .send-btn:disabled {
-            opacity: .4;
-            cursor: not-allowed;
-        }
-
-        .ledger-ai-error {
-            font-size: 12px;
-            color: var(--brick);
-            padding: 6px 16px 2px;
-            display: none;
-            flex-shrink: 0;
-            background: var(--brick-soft);
-            margin: 0 16px 4px;
-            border-radius: 6px;
-        }
-        .ledger-ai-error.show {
-            display: block;
-        }
-
-        /* ===== CHESS CLUB STYLES ===== */
-        #chessClubView {
-            display: none;
-            max-width: 1180px;
-            margin: 0 auto;
-            padding: 28px;
-        }
-        #chessClubView .chess-tabs {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--paper-line);
-            padding-bottom: 12px;
-        }
-        #chessClubView .chess-tabs .tab-btn {
-            border: none;
-            background: var(--paper);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--ink-soft);
-            transition: background .15s, color .15s;
-        }
-        #chessClubView .chess-tabs .tab-btn.active {
-            background: var(--ink);
-            color: #F1ECDD;
-        }
-        #chessClubView .chess-tabs .tab-btn:hover {
-            background: var(--paper-line);
-        }
-        #chessClubView .chess-card {
-            background: var(--paper-raised);
-            border: 1px solid var(--paper-line);
-            border-radius: var(--radius);
-            padding: 22px;
-            box-shadow: var(--shadow);
-            margin-bottom: 22px;
-        }
-        #chessClubView .chess-card .card-head {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        #chessClubView .chess-card .card-head .card-eyebrow {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: var(--brass);
-            margin-bottom: 4px;
-        }
-        #chessClubView .chess-card .card-head .card-title {
-            font-size: 20px;
-        }
-        .member-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--paper-line);
-        }
-        .member-item:last-child {
-            border-bottom: none;
-        }
-        .member-item .avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: var(--brass);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: 700;
-            font-family: 'IBM Plex Mono', monospace;
-            flex-shrink: 0;
-        }
-        .member-item .info {
-            flex: 1;
-        }
-        .member-item .info .name {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .member-item .info .branch {
-            font-size: 12px;
-            color: var(--ink-soft);
-        }
-        .member-item .rating {
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 600;
-            color: var(--brass);
-        }
-        .leaderboard-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 6px 0;
-            border-bottom: 1px solid var(--paper-line);
-        }
-        .leaderboard-row:last-child {
-            border-bottom: none;
-        }
-        .leaderboard-row .rank {
-            font-weight: 700;
-            width: 32px;
-            text-align: center;
-            color: var(--ink-soft);
-        }
-        .leaderboard-row .rank.gold {
-            color: #F59E0B;
-        }
-        .leaderboard-row .rank.silver {
-            color: #9CA3AF;
-        }
-        .leaderboard-row .rank.bronze {
-            color: #D97706;
-        }
-        .leaderboard-row .player {
-            flex: 1;
-            font-weight: 600;
-        }
-        .leaderboard-row .rating {
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 600;
-        }
-        .event-card {
-            border: 1px solid var(--paper-line);
-            border-radius: 10px;
-            padding: 14px 18px;
-            margin-bottom: 12px;
-            background: var(--paper);
-        }
-        .event-card .title {
-            font-weight: 600;
-            font-size: 15px;
-        }
-        .event-card .details {
-            font-size: 13px;
-            color: var(--ink-soft);
-            margin: 4px 0;
-        }
-        .event-card .actions {
-            margin-top: 8px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .challenge-item {
-            border: 1px solid var(--paper-line);
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 10px;
-            background: var(--paper);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .challenge-item .info {
-            font-size: 13px;
-        }
-        .challenge-item .info strong {
-            font-weight: 600;
-        }
-        .challenge-item .actions {
-            display: flex;
-            gap: 6px;
-        }
-        .game-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--paper-line);
-            font-size: 13px;
-        }
-        .game-item:last-child {
-            border-bottom: none;
-        }
-        .game-item .opponent {
-            font-weight: 600;
-        }
-        .game-item .result {
-            font-weight: 600;
-        }
-        .game-item .result.win {
-            color: var(--moss);
-        }
-        .game-item .result.loss {
-            color: var(--brick);
-        }
-        .game-item .result.draw {
-            color: var(--brass);
-        }
-
-        @media (max-width: 720px) {
-            #chessClubView {
-                padding: 12px;
-            }
-            .member-item .info .branch {
-                font-size: 11px;
-            }
-            .leaderboard-row .rank {
-                width: 24px;
-                font-size: 13px;
-            }
-        }
-
-        @media (max-width: 520px) {
-            .ledger-ai-chat {
-                bottom: 80px;
-                right: 12px;
-                width: calc(100vw - 24px);
-                max-height: 65vh;
-                height: 65vh;
-                border-radius: 14px;
-            }
-            .ledger-ai-fab {
-                bottom: 18px;
-                right: 18px;
-                width: 54px;
-                height: 54px;
-                font-size: 24px;
-            }
-            .ledger-ai-messages {
-                padding: 12px 14px;
-            }
-            .ledger-ai-input {
-                padding: 8px 12px;
-            }
-            .ledger-ai-input textarea {
-                font-size: 13px;
-                padding: 8px 10px;
-            }
-            .ledger-ai-header {
-                padding: 10px 14px;
-            }
-            .ledger-ai-header .brand .title {
-                font-size: 15px;
-            }
-        }
-
-        @media (max-width: 720px) {
-            .auth-wrap {
-                grid-template-columns: 1fr;
-            }
-            .auth-side {
-                padding: 28px 24px;
-            }
-            .auth-main {
-                padding: 28px 24px;
-            }
-            .admin-form {
-                grid-template-columns: 1fr;
-            }
-            .admin-form .form-actions {
-                grid-column: 1;
-            }
-            .admin-panel-body {
-                padding: 16px;
-            }
-            .admin-panel-header {
-                padding: 14px 16px;
-            }
-            .admin-tabs {
-                padding: 8px 16px 0 16px;
-            }
-            .admin-tab {
-                padding: 8px 12px;
-                font-size: 12px;
-            }
-            .topbar {
-                padding: 12px 16px;
-            }
-            .shell {
-                padding: 12px;
-            }
-            .shell-grid {
-                padding: 0;
-            }
-            .card {
-                padding: 16px;
-            }
-            .history-nav .date-display {
-                font-size: 15px;
-                min-width: 120px;
-            }
-            .history-summary {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-            .feedback-panel-body {
-                padding: 16px;
-            }
-            .feedback-panel-header {
-                padding: 14px 16px;
-            }
-            .feedback-panel-header h2 {
-                font-size: 17px;
-            }
-            .fb-admin-search {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .fb-admin-filters {
-                justify-content: center;
-            }
-            .fb-admin-table td,
-            .fb-admin-table th {
-                padding: 6px 4px;
-                font-size: 11px;
-            }
-            .fb-admin-table .btn-sm {
-                font-size: 9px;
-                padding: 3px 6px;
-            }
-            .syllabus-branch-selector {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .syllabus-content {
-                max-height: 400px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <div id="loadingScreen">
-        <div class="loader-ring"></div>
-        <div class="loading-msg" id="loadingMsg">Opening the attendance ledger…</div>
-    </div>
-
-    <div id="toast" class="toast"></div>
-
-    <div id="authScreen" style="display:none;">
-        <div class="auth-wrap">
-            <div class="auth-side">
-                <div>
-                    <div class="auth-mark">MMMUT · Gorakhpur</div>
-                    <div class="auth-title display">The <em>Ledger.</em><br />Your semester,<br />period by period.</div>
-                    <div class="auth-sub">Sign in to see today's timetable, mark attendance as it happens, and track where every subject stands before the next minor test.</div>
-                    <div class="period-strip">
-                        <div class="period-chip">I</div><div class="period-chip">II</div><div class="period-chip">III</div>
-                        <div class="period-chip">IV</div><div class="period-chip">V</div><div class="period-chip">VI</div>
-                        <div class="period-chip">VII</div><div class="period-chip">VIII</div>
-                    </div>
-                </div>
-                <div class="auth-foot">Session 2026–27 · First Year B.Tech / BBA / B.Pharm</div>
-            </div>
-            <div class="auth-main">
-                <div class="auth-tabs">
-                    <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log in</button>
-                    <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign up</button>
-                </div>
-
-                <div id="loginForm">
-                    <div class="auth-tabs" id="loginMethodTabs" style="margin-bottom:14px;width:100%;">
-                        <button class="auth-tab active" id="loginMethodUser" type="button" onclick="setLoginMethod('user')">👤 Username</button>
-                        <button class="auth-tab" id="loginMethodRoll" type="button" onclick="setLoginMethod('roll')">🎓 Roll Number</button>
-                    </div>
-                    <div class="field"><label id="loginIdentifierLabel" for="loginUsername">Username</label><input id="loginUsername" placeholder="e.g. rahul.cse26" autocomplete="username" /></div>
-                    <div class="field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" /></div>
-                    <button class="btn-primary" onclick="handleLogin()">Log in</button>
-                    <div class="auth-error" id="loginError"></div>
-                </div>
-
-                <div id="signupForm" style="display:none;">
-                    <div class="field"><label>Full name</label><input id="suName" placeholder="Rahul Kumar" /></div>
-                    <div class="field"><label>Roll Number (compulsory)</label><input id="suRollNumber" placeholder="e.g. 2026011001" maxlength="12" autocomplete="off" /></div>
-                    <div class="field-row">
-                        <div class="field"><label>Username</label><input id="suUsername" placeholder="rahul.cse26" /></div>
-                        <div class="field"><label>Password</label><input id="suPassword" type="password" placeholder="••••••••" /></div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field"><label>Branch</label>
-                            <select id="suBranch" onchange="populateSectionOptions()"></select>
-                        </div>
-                        <div class="field"><label>Section</label>
-                            <select id="suSection"></select>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label>Hostel</label>
-                        <select id="suHostel">
-                            <option value="Day Scholar">Day Scholar</option>
-                            <option value="Tagore Hostel">Tagore Hostel</option>
-                            <option value="VS Hostel">VS Hostel</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Gender</label>
-                        <select id="suGender">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <button class="btn-primary" onclick="handleSignup()">Create account</button>
-                    <div class="auth-error" id="signupError"></div>
-                    <div class="auth-hint">This is a student-built tracker — data is stored so classmates using this same link can also log in. Please don't reuse a sensitive password.</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="app">
-        <div class="topbar">
-            <div class="brand">
-                <div class="brand-mark">L</div>
-                <div>
-                    <div class="brand-name">The Ledger</div>
-                    <div class="brand-sub" id="todayLabel">—</div>
-                </div>
-            </div>
-            <div class="topbar-right">
-                <a href="https://www.mediafire.com/file/q924finlss1x9mz/app-debug.apk/file" target="_blank" class="btn-download-app">📱 Download App</a>
-                <button class="btn-icon" id="notifBell" onclick="scrollToPosts()" title="Announcements">
-                    🔔
-                    <span class="badge-dot" id="notifBadge" style="display:none;">0</span>
-                </button>
-                <a class="btn-chess" href="chess/chess.html">♟️ Chess</a>
-                <button class="btn-ghost" id="pushNotifBtn" style="display:none;" onclick="enablePushNotifications()">🔔 Enable Notifications</button>
-                <div class="user-pill" onclick="openProfileModal()">
-                    <div>
-                        <div class="user-pill-name" id="pillName">—</div>
-                        <div class="user-pill-branch" id="pillBranch">—</div>
-                    </div>
-                    <div class="avatar" id="pillAvatar">—</div>
-                </div>
-                <button class="btn-ghost" onclick="handleLogout()">Log out</button>
-            </div>
-        </div>
-
-        <div class="shell" id="mainShell">
-            <!-- Announcements -->
-            <div class="card" id="postsTopCard">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">📢 Announcements</div>
-                        <div class="card-title display" style="margin-bottom:0;">Latest</div>
-                    </div>
-                    <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="renderPostsFeed(true)">View all</button>
-                </div>
-                <div id="postsFeedContent"></div>
-            </div>
-
-            <!-- Main grid -->
-            <div class="shell-grid">
-                <div>
-                    <div class="card">
-                        <div class="card-head">
-                            <div>
-                                <div class="card-eyebrow">Bell schedule</div>
-                                <div class="card-title display">Today's periods</div>
-                            </div>
-                            <div class="tabbar">
-                                <button class="tab-btn active" id="tabToday" onclick="setScheduleView('today')">Today</button>
-                                <button class="tab-btn" id="tabWeek" onclick="setScheduleView('week')">Full week</button>
-                                <button class="tab-btn" id="tabImage" onclick="setScheduleView('image')">Image</button>
-                            </div>
-                        </div>
-                        <div id="todayView"></div>
-                        <div id="weekView" style="display:none;"></div>
-                        <div id="imageView" style="display:none;">
-                            <div style="overflow-x:auto; border-radius:10px; border:1px solid var(--paper-line);">
-                                <canvas id="ttCanvas"></canvas>
-                            </div>
-                            <button class="btn-primary" style="margin-top:14px;" onclick="downloadTimetableImage()">Download PNG</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="card">
-                        <div class="card-eyebrow">Semester so far</div>
-                        <div class="card-title display" style="margin-bottom:16px;">Attendance</div>
-                        <div class="target-row">
-                            <label>Target attendance</label>
-                            <select id="targetPct" onchange="renderAttendanceStats()">
-                                <option value="75" selected>75%</option>
-                                <option value="80">80%</option>
-                                <option value="90">90%</option>
-                            </select>
-                        </div>
-                        <div class="overall-ring-wrap">
-                            <div>
-                                <div class="overall-num" id="overallPct">—</div>
-                                <div class="overall-sub">overall, this semester</div>
-                            </div>
-                            <div style="font-size:12px;color:var(--ink-soft);line-height:1.6;" id="overallCounts">—</div>
-                        </div>
-                        <div class="overall-leave" id="overallLeave"></div>
-                        <div id="subjectStats"></div>
-                    </div>
-
-                    <!-- Attendance History -->
-                    <div class="card" id="historyCard">
-                        <div class="card-eyebrow">📋 Past &amp; future</div>
-                        <div class="card-title display" style="margin-bottom:12px;">Attendance History</div>
-                        <div class="history-nav">
-                            <button class="nav-btn" id="histPrev" onclick="navigateHistoryDate(-1)" title="Previous day">‹</button>
-                            <span class="date-display" id="histDateDisplay">—</span>
-                            <button class="nav-btn" id="histNext" onclick="navigateHistoryDate(1)" title="Next day">›</button>
-                            <button class="nav-btn today-btn" onclick="goToTodayHistory()">Today</button>
-                        </div>
-                        <div id="historyView"></div>
-                    </div>
-
-                    <!-- ===== HELP & FEEDBACK CARD ===== -->
-                    <div class="card feedback-highlight" id="feedbackCard">
-                        <div class="card-head">
-                            <div>
-                                <div class="card-eyebrow">💬 Help &amp; Feedback</div>
-                                <div class="card-title display" style="margin-bottom:0;">Get Support</div>
-                            </div>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <button class="btn-primary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openFeedbackForm()">➕ New</button>
-                                <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openMyFeedback()">📋 My Feedback</button>
-                                <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openRatingModal()">⭐ Rate ERP</button>
-                            </div>
-                        </div>
-                        <div id="feedbackPreviewContent" style="font-size:13px;color:var(--ink-soft);">
-                            <div style="display:flex;gap:16px;flex-wrap:wrap;padding:4px 0;">
-                                <span>📌 <span id="fbTotalCount">0</span> total</span>
-                                <span>🟡 <span id="fbOpenCount">0</span> open</span>
-                                <span>🟢 <span id="fbResolvedCount">0</span> resolved</span>
-                                <span style="cursor:pointer;color:var(--teal);font-weight:600;" onclick="openMyFeedback()">View all →</span>
-                            </div>
-                            <div id="fbLatestPreview" style="margin-top:6px;font-size:12px;color:var(--ink-soft);">No feedback yet.</div>
-                        </div>
-                    </div>
-
-                    <!-- ===== COMMUNITY POSTS CARD ===== -->
-                    <div class="card" id="communityPostsCard">
-                        <div class="card-head">
-                            <div>
-                                <div class="card-eyebrow">📝 Community</div>
-                                <div class="card-title display" style="margin-bottom:0;">Announcements &amp; Updates</div>
-                            </div>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <button class="btn-primary" id="cpNewPostBtn" style="margin:0;padding:6px 14px;font-size:12px;display:none;" onclick="openCreatePost()">✏️ New Post</button>
-                            </div>
-                        </div>
-                        <div id="communityPostsFeed" style="max-height:450px;overflow-y:auto;padding-right:4px;">
-                            <div style="text-align:center;padding:20px 0;color:var(--ink-soft);">Loading posts…</div>
-                        </div>
-                    </div>
-
-                    <!-- ===== SYLLABUS CARD ===== -->
-                    <div class="syllabus-card" id="syllabusCard">
-                        <div class="card-head">
-                            <div>
-                                <div class="card-eyebrow">📖 Curriculum</div>
-                                <div class="card-title display" style="margin-bottom:0;">Your Syllabus</div>
-                            </div>
-                            <button class="btn-secondary" style="margin:0;padding:6px 14px;font-size:12px;" onclick="openSyllabusFullView()">📄 Full View</button>
-                        </div>
-                        <div class="syllabus-branch-selector" id="syllabusSelector">
-                            <div class="field">
-                                <label>Branch</label>
-                                <select id="syllabusBranch" onchange="loadSyllabus()"></select>
-                            </div>
-                            <div class="field">
-                                <label>Year</label>
-                                <select id="syllabusYear" onchange="loadSyllabus()">
-                                    <option value="1">1st Year</option>
-                                    <option value="2">2nd Year</option>
-                                    <option value="3">3rd Year</option>
-                                    <option value="4">4th Year</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="syllabus-content" id="syllabusContent">
-                            <div class="syllabus-loading">Select your branch to view the syllabus.</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-eyebrow">Quick Resources</div>
-                        <div class="card-title display" style="margin-bottom:16px;">MMMUT Links</div>
-                        <button class="btn-primary" onclick="window.open('https://drive.google.com/file/d/1mHw1emQ9i92HIoq7jw6YWKGpPnFV7wMO/view?usp=drivesdk','_blank')">📄 Time Table PDF</button>
-                        <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://share.google/uOrpx8BFFizpBu9C2','_blank')">📢 MMMUT Notices</button>
-                        <button class="btn-primary" style="margin-top:10px;" onclick="window.open('https://drive.google.com/file/d/1vENgYXFOKl-1O6eAALAfBYHR95a8b8EX/view?usp=drivesdk','_blank')">📖 Academic Calendar</button>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-eyebrow">Academic calendar 2026–27</div>
-                        <div class="card-title display" style="margin-bottom:14px;">Upcoming</div>
-                        <div id="eventsList"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <footer class="app-foot">M.M.M. University of Technology, Gorakhpur — Session 2026–27</footer>
-    </div>
-
-    <!-- ===== CHESS CLUB VIEW ===== -->
-    <div id="chessClubView">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-            <div>
-                <h1 style="font-family:'Fraunces',serif; font-size:28px; font-weight:600;">♟️ Chess Club</h1>
-                <p style="color:var(--ink-soft); font-size:14px; margin-top:2px;">Think. Play. Improve.</p>
-            </div>
-            <button class="btn-secondary" onclick="toggleChessClub(false)" style="margin:0;">← Back to Ledger</button>
-        </div>
-
-        <div class="chess-tabs" id="chessTabs">
-            <button class="tab-btn active" data-tab="home" onclick="switchChessTab('home')">🏠 Home</button>
-            <button class="tab-btn" data-tab="members" onclick="switchChessTab('members')">👥 Members</button>
-            <button class="tab-btn" data-tab="leaderboard" onclick="switchChessTab('leaderboard')">🏆 Leaderboard</button>
-            <button class="tab-btn" data-tab="events" onclick="switchChessTab('events')">📅 Events</button>
-            <button class="tab-btn" data-tab="challenges" onclick="switchChessTab('challenges')">⚔️ Challenges</button>
-            <button class="tab-btn" data-tab="games" onclick="switchChessTab('games')">🎮 My Games</button>
-            <button class="tab-btn" data-tab="activity" onclick="switchChessTab('activity')">📜 Activity</button>
-        </div>
-
-        <!-- Home -->
-        <div id="chessTab-home" class="chess-tab-content">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">♟️ Chess Club</div>
-                        <div class="card-title display">Welcome to the Chess Club</div>
-                    </div>
-                </div>
-                <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
-                    <div style="flex:1; min-width:200px;">
-                        <p style="font-size:14px; color:var(--ink-soft); margin-bottom:12px;">
-                            A community for chess enthusiasts at MMMUT. Join, challenge others, track your rating, and participate in events.
-                        </p>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn-primary" id="chessJoinBtn" style="width:auto; padding:10px 28px; margin:0;" onclick="handleChessJoin()">Join Club</button>
-                            <button class="btn-danger" id="chessLeaveBtn" style="width:auto; padding:10px 28px; margin:0; display:none;" onclick="handleChessLeave()">Leave Club</button>
-                        </div>
-                        <div style="margin-top:16px; font-size:14px;">
-                            <span>👥 <span id="chessMemberCount">0</span> members</span>
-                        </div>
-                    </div>
-                    <div style="flex:1; min-width:200px; background:var(--paper); border-radius:12px; padding:16px;">
-                        <div style="font-weight:600; margin-bottom:8px;">🏆 Upcoming Tournament</div>
-                        <div id="chessNextEvent">
-                            <div style="font-size:13px; color:var(--ink-soft);">No upcoming events.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">🏅 Leaderboard</div>
-                        <div class="card-title display">Top 3</div>
-                    </div>
-                    <button class="btn-secondary" style="margin:0; padding:6px 14px; font-size:12px;" onclick="switchChessTab('leaderboard')">View all</button>
-                </div>
-                <div id="chessLeaderboardPreview">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Members -->
-        <div id="chessTab-members" class="chess-tab-content" style="display:none;">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">👥 Members</div>
-                        <div class="card-title display">All Club Members</div>
-                    </div>
-                    <span id="chessMemberCount2" style="font-size:13px; color:var(--ink-soft);">0 members</span>
-                </div>
-                <div id="chessMembersList">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Leaderboard -->
-        <div id="chessTab-leaderboard" class="chess-tab-content" style="display:none;">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">🏆 Leaderboard</div>
-                        <div class="card-title display">Club Rankings</div>
-                    </div>
-                </div>
-                <div id="chessLeaderboardFull">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Events -->
-        <div id="chessTab-events" class="chess-tab-content" style="display:none;">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">📅 Events</div>
-                        <div class="card-title display">Upcoming & Past</div>
-                    </div>
-                    <button class="btn-primary" id="chessEventCreateBtn" style="margin:0; padding:6px 14px; font-size:12px; display:none;" onclick="openChessEventForm()">➕ New Event</button>
-                </div>
-                <div id="chessEventsList">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-            <!-- Event creation form (admin) -->
-            <div id="chessEventForm" style="display:none; margin-top:20px;">
-                <div class="chess-card">
-                    <div class="card-head">
-                        <div>
-                            <div class="card-eyebrow">✏️ Create Event</div>
-                            <div class="card-title display">New Chess Event</div>
-                        </div>
-                        <button class="btn-secondary" onclick="closeChessEventForm()">Cancel</button>
-                    </div>
-                    <form onsubmit="submitChessEvent(event)">
-                        <div class="field"><label>Title</label><input id="chessEventTitle" placeholder="e.g. Sunday Blitz" required /></div>
-                        <div class="field-row">
-                            <div class="field"><label>Date</label><input type="date" id="chessEventDate" required /></div>
-                            <div class="field"><label>Time</label><input type="time" id="chessEventTime" required /></div>
-                        </div>
-                        <div class="field"><label>Time Control</label><input id="chessEventTimeControl" placeholder="e.g. 10+5" /></div>
-                        <div class="field"><label>Description</label><textarea id="chessEventDesc" rows="2" placeholder="Event description"></textarea></div>
-                        <button type="submit" class="btn-primary" style="width:auto; padding:10px 28px; margin:0;">Create Event</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Challenges -->
-        <div id="chessTab-challenges" class="chess-tab-content" style="display:none;">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">⚔️ Challenges</div>
-                        <div class="card-title display">Challenge a Member</div>
-                    </div>
-                </div>
-                <div style="margin-bottom:12px;">
-                    <label style="font-weight:600; font-size:13px;">Select opponent:</label>
-                    <select id="chessChallengeOpponent" style="padding:8px 12px; border-radius:8px; border:1px solid var(--paper-line); background:#fff; font-size:13px; margin-left:8px;"></select>
-                    <button class="btn-primary" style="width:auto; padding:8px 20px; margin:0 0 0 10px;" onclick="sendChessChallenge()">Challenge</button>
-                </div>
-                <div id="chessChallengesList">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- My Games -->
-        <div id="chessTab-games" class="chess-tab-content" style="display:none;">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">🎮 My Games</div>
-                        <div class="card-title display">Game History</div>
-                    </div>
-                </div>
-                <div id="chessGamesList">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Activity -->
-        <div id="chessTab-activity" class="chess-tab-content" style="display:none;">
-            <div class="chess-card">
-                <div class="card-head">
-                    <div>
-                        <div class="card-eyebrow">📜 Activity</div>
-                        <div class="card-title display">Recent Club Activity</div>
-                    </div>
-                </div>
-                <div id="chessActivityList">
-                    <div style="padding:12px 0; color:var(--ink-soft);">Loading...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== CREATE POST OVERLAY (Admin only) ===== -->
-    <div class="feedback-overlay" id="createPostOverlay">
-        <div class="feedback-panel cp-modal" style="max-width:560px;">
-            <div class="feedback-panel-header">
-                <h2>✏️ Create Post</h2>
-                <button class="close-btn" onclick="closeCreatePost()">✕</button>
-            </div>
-            <div class="feedback-panel-body">
-                <form id="createPostForm" onsubmit="submitCommunityPost(event)">
-                    <div class="field">
-                        <label>Title</label>
-                        <input id="cpTitle" placeholder="Post title" maxlength="100" required />
-                    </div>
-                    <div class="field">
-                        <label>Content</label>
-                        <textarea id="cpContent" placeholder="What's on your mind?" rows="4" required></textarea>
-                    </div>
-                    <div class="field">
-                        <label>Image <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
-                        <input type="file" id="cpImage" accept="image/*" onchange="previewCommunityPostImage()" />
-                        <img id="cpImagePreview" class="cp-image-preview" style="display:none;" />
-                    </div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
-                        <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;margin:0;">Post</button>
-                        <button type="button" class="btn-secondary" style="margin:0;" onclick="closeCreatePost()">Cancel</button>
-                    </div>
-                    <div id="cpFormError" style="margin-top:12px;font-size:13px;color:var(--brick);display:none;"></div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== FEEDBACK FORM OVERLAY ===== -->
-    <div class="feedback-overlay" id="feedbackFormOverlay">
-        <div class="feedback-panel">
-            <div class="feedback-panel-header">
-                <h2>💬 Submit Feedback</h2>
-                <button class="close-btn" onclick="closeFeedbackForm()">✕</button>
-            </div>
-            <div class="feedback-panel-body">
-                <form id="feedbackForm" onsubmit="submitFeedback(event)">
-                    <div class="field">
-                        <label>Category</label>
-                        <select id="fbCategory" required>
-                            <option value="">Select a category…</option>
-                            <option value="bug">🐞 Bug Report</option>
-                            <option value="feature">💡 Feature Suggestion</option>
-                            <option value="timetable">📅 Timetable Issue</option>
-                            <option value="calendar">📆 Academic Calendar Issue</option>
-                            <option value="notice">📢 Notice Issue</option>
-                            <option value="help">❓ Need Help</option>
-                            <option value="general">📝 General Feedback</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Subject <span style="font-weight:400;color:var(--ink-soft);">(max 100 chars)</span></label>
-                        <input id="fbSubject" placeholder="Brief subject line" maxlength="100" required />
-                    </div>
-                    <div class="field">
-                        <label>Description <span style="font-weight:400;color:var(--ink-soft);">(20–2000 chars)</span></label>
-                        <textarea id="fbMessage" placeholder="Describe your issue or suggestion in detail…" rows="4" required></textarea>
-                        <div style="font-size:11px;color:var(--ink-soft);margin-top:4px;" id="fbCharCount">0 / 2000</div>
-                    </div>
-                    <div class="field-row">
-                        <div class="field">
-                            <label>Priority</label>
-                            <select id="fbPriority">
-                                <option value="low">Low</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-                        <div class="field">
-                            <label>Screenshot <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
-                            <input type="file" id="fbScreenshot" accept="image/*" />
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-                        <button type="submit" class="btn-primary" style="width:auto;padding:12px 32px;margin:0;">Submit Feedback</button>
-                        <button type="button" class="btn-secondary" style="margin:0;" onclick="closeFeedbackForm()">Cancel</button>
-                    </div>
-                    <div id="fbFormError" style="margin-top:12px;font-size:13px;color:var(--brick);display:none;"></div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MY FEEDBACK OVERLAY ===== -->
-    <div class="feedback-overlay" id="myFeedbackOverlay">
-        <div class="feedback-panel" style="max-width:720px;">
-            <div class="feedback-panel-header">
-                <h2>📋 My Feedback</h2>
-                <button class="close-btn" onclick="closeMyFeedback()">✕</button>
-            </div>
-            <div class="feedback-panel-body" id="myFeedbackBody">
-                <div style="text-align:center;padding:32px 0;color:var(--ink-soft);">Loading…</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== RATING MODAL ===== -->
-    <div class="feedback-overlay" id="ratingModal">
-        <div class="feedback-panel" style="max-width:480px;">
-            <div class="feedback-panel-header">
-                <h2>⭐ Rate ERP</h2>
-                <button class="close-btn" onclick="closeRatingModal()">✕</button>
-            </div>
-            <div class="feedback-panel-body">
-                <p style="font-size:14px;color:var(--ink-soft);margin-bottom:12px;">How would you rate your experience with The Ledger?</p>
-                <div class="feedback-rating-stars" id="ratingStars">
-                    <span data-val="1" class="star-off">★</span>
-                    <span data-val="2" class="star-off">★</span>
-                    <span data-val="3" class="star-off">★</span>
-                    <span data-val="4" class="star-off">★</span>
-                    <span data-val="5" class="star-off">★</span>
-                </div>
-                <div class="field" style="margin-top:12px;">
-                    <label>Comment <span style="font-weight:400;color:var(--ink-soft);">(optional)</span></label>
-                    <textarea id="ratingComment" placeholder="Share your thoughts…" rows="3"></textarea>
-                </div>
-                <button class="btn-primary" style="width:auto;padding:12px 32px;margin-top:4px;" onclick="submitRating()">Submit Rating</button>
-                <div id="ratingFormError" style="margin-top:12px;font-size:13px;color:var(--brick);display:none;"></div>
-                <div id="ratingExisting" style="margin-top:14px;font-size:13px;color:var(--ink-soft);display:none;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Profile Modal -->
-    <div class="profile-overlay" id="profileModal">
-        <div class="profile-panel">
-            <button class="close-btn" onclick="closeProfileModal()">✕</button>
-            <h2>Edit Profile &amp; Security</h2>
-            <div class="field">
-                <label>Name</label>
-                <input id="profileName" disabled style="background:var(--paper);" />
-            </div>
-            <div class="field">
-                <label>Username</label>
-                <input id="profileUsername" disabled style="background:var(--paper);" />
-            </div>
-            <div class="field">
-                <label>Branch</label>
-                <input id="profileBranch" disabled style="background:var(--paper);" />
-            </div>
-            <div class="field">
-                <label>Section</label>
-                <select id="profileSection"></select>
-            </div>
-            <div class="field">
-                <label>Hostel</label>
-                <select id="profileHostel">
-                    <option value="Day Scholar">Day Scholar</option>
-                    <option value="Tagore Hostel">Tagore Hostel</option>
-                    <option value="VS Hostel">VS Hostel</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>Gender</label>
-                <select id="profileGender">
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                    <option value="Not specified">Not specified</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>Roll Number</label>
-                <input id="profileRollNumber" disabled style="background:var(--paper);" placeholder="—" />
-            </div>
-            <div class="field">
-                <label>Migration Status</label>
-                <input id="profileMigrationStatus" disabled style="background:var(--paper);" placeholder="—" />
-            </div>
-            <div style="margin:0 0 14px;">
-                <button class="btn-secondary" id="profileLinkRollBtn" style="display:none;" onclick="openMigrationModal()">🔗 Link my roll number</button>
-            </div>
-            <button class="btn-primary" onclick="saveProfile()">Save Profile</button>
-
-            <hr />
-
-            <div class="field">
-                <label>Current Password</label>
-                <input id="profileOldPassword" type="password" placeholder="Enter current password" />
-            </div>
-            <div class="field">
-                <label>New Password</label>
-                <input id="profileNewPassword" type="password" placeholder="New password (min 6 characters)" />
-            </div>
-            <div class="field">
-                <label>Confirm New Password</label>
-                <input id="profileConfirmPassword" type="password" placeholder="Confirm new password" />
-            </div>
-            <button class="btn-primary" onclick="changePassword()" style="margin-top:0;">Change Password</button>
-        </div>
-    </div>
-
-    <!-- Roll-Number Migration Gate (recovery-safe) — shown only for a
-         session whose migrationStatus === 'pending'. It never locks the
-         user out: the app keeps working behind it and "Skip for now"
-         dismisses it until the next login. -->
-    <div class="profile-overlay" id="migrationModal">
-        <div class="profile-panel">
-            <button class="close-btn" onclick="closeMigrationModal()">✕</button>
-            <h2>Link your MMMUT Roll Number</h2>
-            <div style="font-size:13px;color:var(--ink-soft);line-height:1.55;margin-bottom:14px;">
-                Your account needs to be linked to your college roll number so you can
-                sign in with it later. This link does <b>not</b> create a new account,
-                change your username/password, or affect your attendance.
-            </div>
-            <div class="field">
-                <label>Roll Number</label>
-                <input id="migrationRollInput" placeholder="e.g. 2026011001" maxlength="12" autocomplete="off" />
-            </div>
-            <button class="btn-primary" onclick="verifyRollNumber()">Verify Roll Number</button>
-            <div style="margin-top:8px;">
-                <a href="javascript:void(0)" style="font-size:12.5px;color:var(--ink-soft);text-decoration:underline;"
-                   onclick="closeMigrationModal()">Skip for now</a>
-                <span style="font-size:12px;color:var(--ink-soft);">— you can always do it later from your profile.</span>
-            </div>
-            <div class="auth-error" id="migrationError" style="display:none;"></div>
-            <div id="migrationStatus" style="margin-top:12px;font-size:13px;"></div>
-        </div>
-    </div>
-
-    <div class="admin-overlay" id="adminPanel">
-        <div class="admin-panel">
-            <div class="admin-panel-header">
-                <h2>⚙️ Admin Panel</h2>
-                <button class="close-btn" onclick="closeAdminPanel()">✕</button>
-            </div>
-            <div class="admin-tabs" id="adminTabs">
-                <button class="admin-tab active" data-tab="dashboard" onclick="switchAdminTab('dashboard')">📊 Dashboard</button>
-                <button class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">👥 Users</button>
-                <button class="admin-tab" data-tab="timetable" onclick="switchAdminTab('timetable')">📅 Timetable</button>
-                <button class="admin-tab" data-tab="calendar" onclick="switchAdminTab('calendar')">📆 Calendar</button>
-                <button class="admin-tab" data-tab="holidays" onclick="switchAdminTab('holidays')">🏖️ Holidays</button>
-                <button class="admin-tab" data-tab="posts" onclick="switchAdminTab('posts')">📢 Announcements</button>
-                <button class="admin-tab" data-tab="requests" onclick="switchAdminTab('requests')">👥 Admin Requests</button>
-                <button class="admin-tab" data-tab="feedback" onclick="switchAdminTab('feedback')">💬 Feedback</button>
-                <button class="admin-tab" data-tab="rollverify" onclick="switchAdminTab('rollverify')">🎓 Roll Verify</button>
-            </div>
-            <div class="admin-panel-body" id="adminBody">
-                <div class="tab-content active" id="tab-dashboard"><div id="adminDashboardContent">Loading dashboard…</div></div>
-                <div class="tab-content" id="tab-users"><div id="adminUsersContent">Loading users…</div></div>
-                <div class="tab-content" id="tab-timetable"><div id="adminTimetableContent">Loading timetable editor…</div></div>
-                <div class="tab-content" id="tab-calendar"><div id="adminCalendarContent">Loading calendar editor…</div></div>
-                <div class="tab-content" id="tab-holidays"><div id="adminHolidaysContent">Loading holidays…</div></div>
-                <div class="tab-content" id="tab-posts"><div id="adminPostsContent">Loading announcements…</div></div>
-                <div class="tab-content" id="tab-requests"><div id="adminRequestsContent">Loading requests…</div></div>
-                <div class="tab-content" id="tab-feedback"><div id="adminFeedbackContent">Loading feedback…</div></div>
-                <div class="tab-content" id="tab-rollverify"><div id="adminRollVerifyContent">Loading roll verification…</div></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== ADMIN REPLY MODAL (inline) ===== -->
-    <div class="feedback-overlay" id="adminReplyModal">
-        <div class="feedback-panel" style="max-width:540px;">
-            <div class="feedback-panel-header">
-                <h2>💬 Reply to Feedback</h2>
-                <button class="close-btn" onclick="closeAdminReplyModal()">✕</button>
-            </div>
-            <div class="feedback-panel-body fb-reply-modal">
-                <div style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;" id="replyTicketInfo">Ticket: —</div>
-                <textarea class="reply-textarea" id="adminReplyText" placeholder="Type your reply…"></textarea>
-                <div class="reply-actions">
-                    <button class="btn-primary" style="width:auto;padding:10px 28px;margin:0;" onclick="submitAdminReply()">Send Reply</button>
-                    <button class="btn-secondary" style="margin:0;" onclick="closeAdminReplyModal()">Cancel</button>
-                </div>
-                <div id="adminReplyError" style="margin-top:10px;font-size:13px;color:var(--brick);display:none;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- ===== LEDGER AI CHAT UI ===================================== -->
-    <!-- ============================================================ -->
-
-    <button class="ledger-ai-fab" id="ledgerAiFab" onclick="toggleLedgerAI()" aria-label="Toggle Ledger AI chat">
-        🤖
-        <span class="badge-dot" id="aiBadgeDot" style="display:none;">•</span>
-    </button>
-
-    <div class="ledger-ai-chat" id="ledgerAiChat">
-        <div class="ledger-ai-header">
-            <div class="brand">
-                <span class="icon">🤖</span>
-                <div>
-                    <div class="title">Ledger AI</div>
-                    <div class="sub">Academic Assistant</div>
-                </div>
-            </div>
-            <div class="actions">
-                <button onclick="clearLedgerAI()" title="Clear conversation">🗑️</button>
-                <button onclick="toggleLedgerAI()" title="Close chat">✕</button>
-            </div>
-        </div>
-
-        <div class="ledger-ai-messages" id="ledgerAiMessages">
-            <div class="empty-state" id="ledgerAiEmpty">
-                <div class="big-icon">📚</div>
-                <div>Ask me anything about your academics</div>
-                <div class="sub">Attendance · Timetable · Syllabus · Study plans</div>
-            </div>
-        </div>
-
-        <div class="ledger-ai-error" id="ledgerAiError"></div>
-
-        <div class="ledger-ai-input">
-            <textarea id="ledgerAiInput" rows="1" placeholder="Ask Ledger AI…" onkeydown="handleLedgerAIKeydown(event)" oninput="autoResizeLedgerInput(this)"></textarea>
-            <button class="send-btn" id="ledgerAiSendBtn" onclick="sendLedgerAIMessage()" title="Send message">➤</button>
-        </div>
-    </div>
-
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js",
-                "firebase/auth": "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js",
-                "firebase/firestore": "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js",
-                "firebase/storage": "https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js",
-                "firebase/app-check": "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js",
-                "firebase/ai": "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js",
-                "firebase/messaging": "https://www.gstatic.com/firebasejs/12.17.1/firebase-messaging.js"
-            }
-        }
-    </script>
-
-    <script type="module">
-        // ===== FIREBASE IMPORTS =====
+﻿        // ===== FIREBASE IMPORTS =====
         import { initializeApp } from "firebase/app";
         import {
             getAuth,
@@ -3532,7 +88,7 @@
         if (!siteKeyIsSet) {
             console.error(
                 'App Check is NOT initialized: RECAPTCHA_ENTERPRISE_SITE_KEY is still the placeholder. ' +
-                'Open Google Cloud → Security → reCAPTCHA Enterprise (or the Firebase console App Check page) ' +
+                'Open Google Cloud â†’ Security â†’ reCAPTCHA Enterprise (or the Firebase console App Check page) ' +
                 'and copy the SITE KEY of the WEB key for coldlogic144-prog.github.io into the constant above, ' +
                 'then redeploy. No App Check token will be sent until you do.'
             );
@@ -3584,7 +140,7 @@
         // ========== ROLL-NUMBER MIGRATION (recovery-safe, additive) ==========
         // Master switches. FLIP ROLL_MIGRATION_ENABLED to false to instantly
         // restore the ORIGINAL pre-migration behavior of the app (gate hidden,
-        // roll-login disabled). No cleanup required — the migration only EVER:
+        // roll-login disabled). No cleanup required â€” the migration only EVER:
         //   * reads studentRoster (authoritative roster, admin-imported),
         //   * creates ONE userRolls/{roll} doc (claim once, never overwritten),
         //   * updateDoc()s (merges) the CURRENT user's own users/{uid} doc.
@@ -3592,12 +148,11 @@
         // passwords, nor touches attendance, chess, notices, feedback,
         // timetable, syllabus or FCM data.
         const ROLL_MIGRATION_ENABLED = true; // master kill-switch
-        // Roll-number linking is now enabled FOR EVERYONE (TEST_MODE = false).
-        // Every signed-in user is asked for their roll number and can sign in
-        // with it once verified. The TEST list is consulted only while
-        // TEST_MODE is true (a safe dry-run for a handful of accounts).
-        const ROLL_MIGRATION_TEST_MODE = false;
-        const ROLL_MIGRATION_TEST_USERS = ['tanish']; // inactive while TEST_MODE is false
+        // While TEST mode is on, only usernames in ROLL_MIGRATION_TEST_USERS
+        // see the linking gate / get roll-login resolution. Everyone else
+        // keeps 100% of the old experience.
+        const ROLL_MIGRATION_TEST_MODE = true;
+        const ROLL_MIGRATION_TEST_USERS = ['tanish'];
         const ROLL_MIGRATION_DEBUG = true; // safe console diagnostics (no secrets)
         const ROLL_NUMBER_PATTERN = /^\d{10}$/;
         const studentRosterCollection = collection(db, "studentRoster");
@@ -3607,7 +162,7 @@
         // Additive module. Does not touch auth, App Check, AI Logic, Firestore rules,
         // or chess club logic. Safe no-ops if unsupported / not yet configured.
 
-        // PART 3 — VAPID KEY
+        // PART 3 â€” VAPID KEY
         // Paste the PUBLIC VAPID key from:
         // Firebase Console -> Project settings -> Cloud Messaging -> Web Push certificates
         // NEVER paste the private key here. This constant is PUBLIC by design.
@@ -3650,17 +205,17 @@
                 btn.style.display = 'inline-flex';
 
                 if (Notification.permission === 'granted') {
-                    btn.textContent = '🔔 Notifications enabled';
+                    btn.textContent = 'ðŸ”” Notifications enabled';
                     btn.disabled = true;
                     btn.title = 'Push notifications are enabled for this browser.';
                     btn.style.opacity = '0.75';
                 } else if (Notification.permission === 'denied') {
-                    btn.textContent = '🔕 Notifications blocked';
+                    btn.textContent = 'ðŸ”• Notifications blocked';
                     btn.disabled = true;
                     btn.title = 'Notifications are blocked for this site. Enable them in your browser settings (site permissions) to receive alerts.';
                     btn.style.opacity = '0.6';
                 } else {
-                    btn.textContent = '🔔 Enable Notifications';
+                    btn.textContent = 'ðŸ”” Enable Notifications';
                     btn.disabled = false;
                     btn.title = 'Get notified about notices, chess challenges, and events.';
                     btn.style.opacity = '1';
@@ -3680,7 +235,7 @@
             return 'web_' + Math.abs(hash).toString(36);
         }
 
-        // PART 6 — STORE THE FCM TOKEN
+        // PART 6 â€” STORE THE FCM TOKEN
         async function storeFcmToken(uid, token) {
             try {
                 const id = tokenDocId(token);
@@ -3701,13 +256,13 @@
                         'Firestore rules are blocking this write. Add a rule allowing a signed-in user ' +
                         'to read/write their own subcollection: match /users/{uid}/notificationTokens/{tokenId} ' +
                         '{ allow read, write: if request.auth != null && request.auth.uid == uid; } ' +
-                        'This was NOT added automatically — please add it yourself in Firebase Console -> Firestore -> Rules.'
+                        'This was NOT added automatically â€” please add it yourself in Firebase Console -> Firestore -> Rules.'
                     );
                 }
             }
         }
 
-        // PART 7 — FOREGROUND NOTIFICATIONS
+        // PART 7 â€” FOREGROUND NOTIFICATIONS
         function handleIncomingNotificationData(data) {
             if (!data) return;
             try {
@@ -3731,7 +286,7 @@
                     const title = payload?.notification?.title || payload?.data?.title || 'Notification';
                     const body = payload?.notification?.body || payload?.data?.body || '';
                     if (typeof showToast === 'function') {
-                        showToast(`🔔 ${title}${body ? ' — ' + body : ''}`, 5000);
+                        showToast(`ðŸ”” ${title}${body ? ' â€” ' + body : ''}`, 5000);
                     }
                     handleIncomingNotificationData(payload?.data);
                 });
@@ -3786,7 +341,7 @@
                 updatePushButtonUI();
 
                 if (Notification.permission === 'granted' && currentUid) {
-                    // Already granted earlier — refresh/store token without prompting.
+                    // Already granted earlier â€” refresh/store token without prompting.
                     await fetchAndStoreToken();
                 }
             } catch (e) {
@@ -3814,7 +369,7 @@
             }
         }
 
-        // PART 4/5 — called ONLY from the explicit "Enable Notifications" button click.
+        // PART 4/5 â€” called ONLY from the explicit "Enable Notifications" button click.
         async function enablePushNotifications() {
             if (pushInitInFlight) return;
             pushInitInFlight = true;
@@ -3839,7 +394,7 @@
                     return;
                 }
 
-                if (btn) { btn.disabled = true; btn.textContent = 'Requesting…'; }
+                if (btn) { btn.disabled = true; btn.textContent = 'Requestingâ€¦'; }
 
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
@@ -3855,7 +410,7 @@
 
                 const token = await fetchAndStoreToken();
                 if (token) {
-                    showToast('🔔 Notifications enabled.');
+                    showToast('ðŸ”” Notifications enabled.');
                 } else {
                     showToast('Could not finish enabling notifications. Check console for details.');
                 }
@@ -3920,7 +475,7 @@
         const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
         const BRANCHES = [
-            { id: 'civil', name: 'B.Tech — Civil Engineering', sections: ['A', 'B'], room: 'TL-206',
+            { id: 'civil', name: 'B.Tech â€” Civil Engineering', sections: ['A', 'B'], room: 'TL-206',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-131', name: 'Engineering Physics', ltp: [3, 0, 2] },
@@ -3928,7 +483,7 @@
                     { code: 'BCE-121', name: 'Engineering Graphics', ltp: [2, 0, 4] },
                     { code: 'BHS-101', name: 'Universal Human Values', ltp: [3, 1, 0] },
                 ] },
-            { id: 'cse', name: 'B.Tech — Computer Sc. & Engineering', sections: ['A', 'B', 'C', 'D'], room: 'TL-109 / TL-201',
+            { id: 'cse', name: 'B.Tech â€” Computer Sc. & Engineering', sections: ['A', 'B', 'C', 'D'], room: 'TL-109 / TL-201',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-131', name: 'Engineering Physics', ltp: [3, 0, 2] },
@@ -3936,7 +491,7 @@
                     { code: 'BCS-111', name: 'Web Designing-1', ltp: [2, 0, 4] },
                     { code: 'BHS-101', name: 'Universal Human Values', ltp: [3, 1, 0] },
                 ] },
-            { id: 'it', name: 'B.Tech — Information Technology', sections: ['A', 'B'], room: 'TL-203',
+            { id: 'it', name: 'B.Tech â€” Information Technology', sections: ['A', 'B'], room: 'TL-203',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-131', name: 'Engineering Physics', ltp: [3, 0, 2] },
@@ -3944,7 +499,7 @@
                     { code: 'BIT-104', name: 'Internet and Web Designing', ltp: [2, 0, 4] },
                     { code: 'BHS-101', name: 'Universal Human Values', ltp: [3, 1, 0] },
                 ] },
-            { id: 'chemical', name: 'B.Tech — Chemical Engineering', sections: ['A'], room: 'TL-110',
+            { id: 'chemical', name: 'B.Tech â€” Chemical Engineering', sections: ['A'], room: 'TL-110',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-131', name: 'Engineering Physics', ltp: [3, 0, 2] },
@@ -3952,7 +507,7 @@
                     { code: 'BME-104', name: 'Manufacturing Techniques Workshop', ltp: [2, 0, 4] },
                     { code: 'BHS-101', name: 'Universal Human Values', ltp: [3, 1, 0] },
                 ] },
-            { id: 'ee', name: 'B.Tech — Electrical Engineering', sections: ['A', 'B'], room: 'TL-202',
+            { id: 'ee', name: 'B.Tech â€” Electrical Engineering', sections: ['A', 'B'], room: 'TL-202',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-140', name: 'Environmental Science & Green Chemistry', ltp: [3, 0, 2] },
@@ -3960,7 +515,7 @@
                     { code: 'BEE-108A', name: 'Electrical Wiring & Estimation', ltp: [3, 0, 2] },
                     { code: 'BHS-102', name: 'Technical Writing & Professional Communication', ltp: [2, 1, 2] },
                 ] },
-            { id: 'me', name: 'B.Tech — Mechanical Engineering', sections: ['A', 'B'], room: 'TL-205',
+            { id: 'me', name: 'B.Tech â€” Mechanical Engineering', sections: ['A', 'B'], room: 'TL-205',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-140', name: 'Environmental Science & Green Chemistry', ltp: [3, 0, 2] },
@@ -3968,7 +523,7 @@
                     { code: 'BME-104', name: 'Manufacturing Practice Workshop', ltp: [2, 0, 4] },
                     { code: 'BHS-102', name: 'Technical Writing & Professional Communication', ltp: [2, 1, 2] },
                 ] },
-            { id: 'ece', name: 'B.Tech — Electronics & Comm. Engineering', sections: ['A', 'B', 'C'], room: 'TL-207 / TL-204',
+            { id: 'ece', name: 'B.Tech â€” Electronics & Comm. Engineering', sections: ['A', 'B', 'C'], room: 'TL-207 / TL-204',
                 subjects: [
                     { code: 'BSM-110', name: 'Engineering Mathematics I', ltp: [3, 1, 0] },
                     { code: 'BSM-140', name: 'Environmental Science & Green Chemistry', ltp: [3, 0, 2] },
@@ -4029,11 +584,11 @@
             { start: '2026-12-15', end: '2026-12-15', title: 'Last date for declaration of semester result' },
             { start: '2026-12-09', end: '2026-12-12', title: 'Online registration (Even Semester)' },
             { start: '2026-12-14', end: '2026-12-14', title: 'Commencement of classes (Even Semester)' },
-            { start: '2026-12-18', end: '2026-12-20', title: 'CSA Activity — Tech Srijan' },
+            { start: '2026-12-18', end: '2026-12-20', title: 'CSA Activity â€” Tech Srijan' },
             { start: '2027-01-30', end: '2027-01-30', title: 'Display of Mid Semester Attendance by HoD' },
             { start: '2027-02-01', end: '2027-02-06', title: 'Minor Test Examination' },
-            { start: '2027-02-12', end: '2027-02-13', title: 'CSA Activity — Annual Sports Meet' },
-            { start: '2027-02-26', end: '2027-02-28', title: 'CSA Activity — Cultural Program' },
+            { start: '2027-02-12', end: '2027-02-13', title: 'CSA Activity â€” Annual Sports Meet' },
+            { start: '2027-02-26', end: '2027-02-28', title: 'CSA Activity â€” Cultural Program' },
             { start: '2027-03-22', end: '2027-03-27', title: 'Mid Semester Break' },
             { start: '2027-04-17', end: '2027-04-17', title: 'Last date for end semester classes' },
             { start: '2027-04-19', end: '2027-04-24', title: 'Practical Exam / Doubt Clearing classes' },
@@ -4042,10 +597,10 @@
             { start: '2027-05-05', end: '2027-06-30', title: 'Session Break' },
             { start: '2027-05-10', end: '2027-05-10', title: 'Last date for evaluation of answer sheets & marks uploading' },
             { start: '2027-05-12', end: '2027-05-12', title: 'Grade moderation committee meeting (1st Year)' },
-            { start: '2027-05-07', end: '2027-05-14', title: 'Social Work / Training — Dean of Extension' },
+            { start: '2027-05-07', end: '2027-05-14', title: 'Social Work / Training â€” Dean of Extension' },
             { start: '2027-05-13', end: '2027-05-13', title: 'Last date for declaration of semester result' },
             { start: '2027-05-16', end: '2027-06-14', title: 'Summer Break for Teachers' },
-            { start: '2027-07-01', end: '2027-07-10', title: 'Online registration & fee deposit — Second Year' },
+            { start: '2027-07-01', end: '2027-07-10', title: 'Online registration & fee deposit â€” Second Year' },
         ];
 
         const PDF_TIMETABLES = {
@@ -4053,415 +608,415 @@
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "IV": { "code": "BCE-121", "name": "Engineering Graphics", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VIII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" } },
                 "Tuesday": { "I": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "IV": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "V": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "IV": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "V": { "code": "BCE-121", "name": "Engineering Graphics", "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "cse::A": { "Monday": { "I": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "V": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "V": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Wednesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Wednesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "VIII": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" } },
                 "Thursday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "cse::B": { "Monday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "III": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "III": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "VI": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "VII": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Thursday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Thursday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "V": { "code": "BCS-111", "name": "Web Designing-1", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "V": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
-            "cse::C": { "Monday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
+            "cse::C": { "Monday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "V": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BCS-111", "name": "Web Designing-1", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Wednesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Wednesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "V": { "code": "BCS-111", "name": "Web Designing-1", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "VII": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "cse::D": { "Monday": { "I": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "II": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "II": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "V": { "code": "BCS-111", "name": "Web Designing-1", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Lecture" },
                     "II": { "code": "BCS-111", "name": "Web Designing-1", "type": "Lecture" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BCS-110", "name": "Introduction to C Programming", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VIII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" } },
-                "Thursday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                "Thursday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VIII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VIII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" } } },
             "it::A": { "Monday": { "I": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BIT-104", "name": "Internet and Web Designing", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VII": { "code": "BIT-104", "name": "Internet and Web Designing", "type": "Lecture" },
                     "VIII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "VII": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "it::B": { "Monday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BIT-104", "name": "Internet and Web Designing", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
                     "VIII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" } },
                 "Wednesday": { "I": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "IV": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "V": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
                     "V": { "code": "BIT-104", "name": "Internet and Web Designing", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "II": { "code": "TL-203", "name": "TL-203", "type": "Tutorial" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BIT-104", "name": "Internet and Web Designing", "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
-            "chemical::A": { "Monday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
+            "chemical::A": { "Monday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "II": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BME-101", "name": "Manufacturing Techniques Workshop", "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Tuesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Tuesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "II": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-131", "name": "Engineering Physics", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "TL-110", "name": "TL-110", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "VI": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Thursday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Thursday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "II": { "code": "BSM-131", "name": "Engineering Physics", "type": "Lecture" },
                     "III": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "IV": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "V": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BIT-103", "name": "Programming in C", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BHS-101", "name": "Universal Human Values", "type": "Lecture" },
                     "IV": { "code": "BIT-103", "name": "Programming in C", "type": "Lecture" },
                     "V": { "code": "BME-101", "name": "Manufacturing Techniques Workshop", "type": "Lecture" },
                     "VI": { "code": "TL-110", "name": "TL-110", "type": "Tutorial" },
                     "VII": { "code": "BHS-101", "name": "Universal Human Values", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "ee::A": { "Monday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Tuesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Tuesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "IV": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
                     "V": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "IV": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "VII": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
-            "ee::B": { "Monday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
+            "ee::B": { "Monday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Lecture" },
                     "IV": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Lecture" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "IV": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
                     "VIII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" } },
                 "Friday": { "I": { "code": "BEE-108A", "name": "Electrical Wiring & Estimation", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
                     "IV": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
@@ -4469,7 +1024,7 @@
                     "VI": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "me::A": { "Monday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
@@ -4478,17 +1033,17 @@
                         "type": "Lecture" },
                     "V": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VIII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" } },
                 "Tuesday": { "I": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "VIII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
@@ -4497,37 +1052,37 @@
                         "type": "Lecture" },
                     "II": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Lecture" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
                     "VIII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" } },
                 "Thursday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Lecture" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "me::B": { "Monday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "VI": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "VII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
@@ -4536,99 +1091,99 @@
                     "V": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Practical" },
                     "VI": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Wednesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Wednesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "IV": { "code": "BME-104", "name": "Manufacturing Practice Workshop", "type": "Lecture" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "V": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "ece::A": { "Monday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
                     "VI": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
                     "VII": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
                     "VI": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
                     "VII": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" },
                     "IV": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                     "type": "Lecture" },
                     "V": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Lecture" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VI": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
-            "ece::B": { "Monday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
+            "ece::B": { "Monday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Lecture" },
                     "IV": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VIII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" } },
@@ -4640,94 +1195,94 @@
                     "type": "Lecture" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "II": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
                     "VIII": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Lecture" } },
                 "Thursday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "IV": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
                     "V": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "V": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "ece::C": { "Monday": { "I": { "code": "BEE-110", "name": "Basic Electrical Engineering",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "VI": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Tuesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Tuesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "IV": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Lecture" },
                     "V": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Lecture" },
                     "II": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "III": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Lecture" },
                     "VI": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "VII": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "eceiot::A": { "Monday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I",
                         "type": "Lecture" },
                     "II": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
@@ -4736,10 +1291,10 @@
                         "type": "Lecture" },
                     "IV": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
                     "V": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "II": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
@@ -4749,35 +1304,35 @@
                     "V": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" },
                     "VI": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Wednesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Wednesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Lecture" },
                     "IV": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                     "type": "Lecture" },
                     "V": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Practical" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BSM-140", "name": "Environmental Science & Green Chemistry",
                         "type": "Practical" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BEC-106", "name": "Electronic Components Testing & Measurement",
                         "type": "Lecture" },
                     "IV": { "code": "BEE-110", "name": "Basic Electrical Engineering", "type": "Lecture" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BSM-110", "name": "Engineering Mathematics I", "type": "Tutorial" },
                     "VIII": { "code": "BHS-102", "name": "Technical Writing & Professional Communication",
                         "type": "Tutorial" } } },
@@ -4788,17 +1343,17 @@
                         "type": "Tutorial" },
                     "IV": { "code": "BBA-114", "name": "Financial Accounting", "type": "Tutorial" },
                     "V": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Tutorial" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Lecture" },
                     "II": { "code": "BBA-114", "name": "Financial Accounting", "type": "Lecture" },
                     "III": { "code": "BBA-114", "name": "Financial Accounting", "type": "Tutorial" },
                     "IV": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Lecture" },
                     "V": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Lecture" },
                     "II": { "code": "BBA-114", "name": "Financial Accounting", "type": "Lecture" },
                     "III": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
@@ -4806,18 +1361,18 @@
                     "IV": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Tutorial" },
                     "V": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Tutorial" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Lecture" },
                     "II": { "code": "AUC-108", "name": "Intellectual Property Rights", "type": "Lecture" },
                     "III": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Tutorial" },
                     "IV": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Lecture" },
                     "V": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "VII": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Friday": { "I": { "code": "BBA-A01", "name": "Business Communication for Managers",
                         "type": "Lecture" },
                     "II": { "code": "AUC-108", "name": "Intellectual Property Rights", "type": "Lecture" },
@@ -4825,26 +1380,26 @@
                     "IV": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Lecture" },
                     "V": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
             "bba::B": { "Monday": { "I": { "code": "BBA-114", "name": "Financial Accounting", "type": "Tutorial" },
                     "II": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Lecture" },
                     "III": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Lecture" },
                     "IV": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Tutorial" },
                     "V": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Lecture" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Tuesday": { "I": { "code": "AUC-108", "name": "Intellectual Property Rights", "type": "Lecture" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Tutorial" },
                     "IV": { "code": "BBA-114", "name": "Financial Accounting", "type": "Lecture" },
                     "V": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Lecture" },
                     "VI": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Lecture" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Wednesday": { "I": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Lecture" },
                     "II": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Lecture" },
@@ -4853,18 +1408,18 @@
                     "V": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Tutorial" },
                     "VI": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Tutorial" },
                     "VII": { "code": "AUC-108", "name": "Intellectual Property Rights", "type": "Lecture" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
                 "Thursday": { "I": { "code": "BBA-115", "name": "Principles & Practices of Management",
                         "type": "Lecture" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "III": { "code": "BBA-114", "name": "Financial Accounting", "type": "Lecture" },
                     "IV": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Tutorial" },
                     "V": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Lecture" },
                     "VI": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Tutorial" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
                     "II": { "code": "BHM-121", "name": "Industrial Psychology", "type": "Lecture" },
                     "III": { "code": "BBA-116", "name": "Quantitative Techniques for Business Research",
                         "type": "Lecture" },
@@ -4872,48 +1427,48 @@
                         "type": "Tutorial" },
                     "V": { "code": "BBA-115", "name": "Principles & Practices of Management", "type": "Tutorial" },
                     "VI": { "code": "BBA-A01", "name": "Business Communication for Managers", "type": "Lecture" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } },
-            "bpharm::A": { "Monday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Tuesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Wednesday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Thursday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } },
-                "Friday": { "I": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "II": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "III": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "IV": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "V": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VI": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VII": { "code": "—", "name": "Self Study / Library", "type": "Free" },
-                    "VIII": { "code": "—", "name": "Self Study / Library", "type": "Free" } } }
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } },
+            "bpharm::A": { "Monday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Tuesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Wednesday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Thursday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } },
+                "Friday": { "I": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "II": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "III": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "IV": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "V": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VI": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" },
+                    "VIII": { "code": "â€”", "name": "Self Study / Library", "type": "Free" } } }
         };
 
         // ========== HELPERS ==========
@@ -5032,7 +1587,7 @@
             });
             DAYS.forEach(d => {
                 TEACH_PERIODS.forEach(p => {
-                    if (!grid[d][p.key]) grid[d][p.key] = { code: '—', name: 'Self Study / Library',
+                    if (!grid[d][p.key]) grid[d][p.key] = { code: 'â€”', name: 'Self Study / Library',
                     type: 'Free' };
                 });
             });
@@ -5336,8 +1891,8 @@
                     ],
                     5: [
                         { code: "BCH-305", name: "Chemical Technology", ltp: "3-0-2", credits: 4 },
-                        { code: "BCH-306", name: "Reaction Engineering – II", ltp: "3-0-2", credits: 4 },
-                        { code: "BCH-307", name: "Mass Transfer – II", ltp: "3-0-2", credits: 4 },
+                        { code: "BCH-306", name: "Reaction Engineering â€“ II", ltp: "3-0-2", credits: 4 },
+                        { code: "BCH-307", name: "Mass Transfer â€“ II", ltp: "3-0-2", credits: 4 },
                         { code: "BHS-303", name: "Industrial/Organizational Psychology", ltp: "3-1-0", credits: 4 }
                     ],
                     6: [
@@ -5634,7 +2189,7 @@
                 return;
             }
 
-            let html = `<h3>${branchData.name} — Year ${year}</h3>`;
+            let html = `<h3>${branchData.name} â€” Year ${year}</h3>`;
             html += `<table>
                         <thead>
                             <tr>
@@ -5684,7 +2239,7 @@
                     </style>
                     </head><body>
                     ${content}
-                    <p style="font-size:11px;color:#8B8676;margin-top:20px;">MMMUT Gorakhpur — Curriculum Structure & Syllabi (w.e.f. 2024-25)</p>
+                    <p style="font-size:11px;color:#8B8676;margin-top:20px;">MMMUT Gorakhpur â€” Curriculum Structure & Syllabi (w.e.f. 2024-25)</p>
                     </body></html>
                 `);
                 win.document.close();
@@ -5760,7 +2315,7 @@
             document.getElementById('profileGender').value = currentUser.gender || 'Not specified';
             const rollField = document.getElementById('profileRollNumber');
             const migField = document.getElementById('profileMigrationStatus');
-            if (rollField) rollField.value = currentUser.rollNumber || (currentUser.pendingRollNumber ? currentUser.pendingRollNumber + ' (unverified)' : '—');
+            if (rollField) rollField.value = currentUser.rollNumber || (currentUser.pendingRollNumber ? currentUser.pendingRollNumber + ' (unverified)' : 'â€”');
             if (migField) migField.value = rollMigrationLabel(currentUser.migrationStatus);
             const linkBtn = document.getElementById('profileLinkRollBtn');
             if (linkBtn) {
@@ -5797,7 +2352,7 @@
                 renderSchedule();
                 renderHistoryView();
                 renderAttendanceStats();
-                document.getElementById('pillBranch').textContent = branch.name.replace('B.Tech — ', '') + ' · Sec ' +
+                document.getElementById('pillBranch').textContent = branch.name.replace('B.Tech â€” ', '') + ' Â· Sec ' +
                     newSection;
                 showToast('Profile updated!');
                 closeProfileModal();
@@ -5878,24 +2433,6 @@
             sel.innerHTML = branch.sections.map(s => `<option value="${s}">Section ${s}</option>`).join('');
         }
 
-        // Toggle between "Login with Username" and "Login with Roll Number".
-        let loginMethod = 'user'; // 'user' | 'roll'
-        function setLoginMethod(m) {
-            loginMethod = (m === 'roll') ? 'roll' : 'user';
-            const userBtn = document.getElementById('loginMethodUser');
-            const rollBtn = document.getElementById('loginMethodRoll');
-            const lbl = document.getElementById('loginIdentifierLabel');
-            const inp = document.getElementById('loginUsername');
-            if (userBtn) userBtn.classList.toggle('active', loginMethod === 'user');
-            if (rollBtn) rollBtn.classList.toggle('active', loginMethod === 'roll');
-            if (lbl) lbl.textContent = loginMethod === 'roll' ? 'Roll Number' : 'Username';
-            if (inp) {
-                inp.value = '';
-                inp.placeholder = loginMethod === 'roll' ? 'e.g. 2026011001' : 'e.g. rahul.cse26';
-                inp.autocomplete = loginMethod === 'roll' ? 'off' : 'username';
-            }
-        }
-
         function switchAuthTab(which) {
             document.getElementById('tabLogin').classList.toggle('active', which === 'login');
             document.getElementById('tabSignup').classList.toggle('active', which === 'signup');
@@ -5919,38 +2456,10 @@
             const section = document.getElementById('suSection').value;
             const hostel = document.getElementById('suHostel').value;
             const gender = document.getElementById('suGender').value;
-            const rollNumber = normalizeRollInput(document.getElementById('suRollNumber') ? document.getElementById('suRollNumber').value : '');
             if (!name || !username || !password) { showError('signupError', 'Fill in your name, username and password.');
                 return; }
             if (username.length < 3) { showError('signupError', 'Username should be at least 3 characters.'); return; }
             if (password.length < 6) { showError('signupError', 'Password should be at least 6 characters.'); return; }
-            // Roll number is COMPULSORY for all new registrations.
-            if (!ROLL_NUMBER_PATTERN.test(rollNumber)) { showError('signupError', 'Roll Number is compulsory — enter your valid 10-digit college roll number (e.g. 2026011001).'); return; }
-            const isAdminFlag = (username === 'tanish');
-
-            // Resolve the entered roll against the admission roster BEFORE creating
-            // the account and pre-verify when the identity engine passes:
-            //    verified      -> roll is auto-linked (userRolls created below)
-            //    manual_review -> admin must approve (name/branch/unknown roll)
-            let preStatus = 'pending', preRollNumber = '', prePending = rollNumber, preReason = '';
-            try {
-                const rsnap = await getDoc(doc(studentRosterCollection, rollNumber));
-                if (rsnap.exists()) {
-                    const verdict = evaluateRollClaim({ name, branchId, isAdmin: isAdminFlag }, rsnap.data());
-                    if (verdict.verdict === 'ok') {
-                        preStatus = 'verified'; preRollNumber = rollNumber; prePending = '';
-                    } else {
-                        preStatus = 'manual_review';
-                        preReason = (verdict.reasons || []).join(',');
-                    }
-                } else {
-                    preReason = 'roll-not-in-admission-roster';
-                }
-            } catch (e) {
-                rollMigrationLog('signup roster lookup failed', e && e.code);
-                preReason = 'roster-unavailable';
-            }
-
             signingUp = true;
             try {
                 let credential;
@@ -5961,6 +2470,7 @@
                         credential = await signInWithEmailAndPassword(auth, authEmail(username), password);
                     } else { throw e; }
                 }
+                const isAdminFlag = (username === 'tanish');
                 const record = {
                     name,
                     username,
@@ -5970,27 +2480,12 @@
                     gender,
                     isAdmin: isAdminFlag,
                     adminRequested: false,
-                    migrationStatus: preStatus,
-                    rollNumber: preRollNumber,
-                    rollNumberVerified: preStatus === 'verified',
-                    pendingRollNumber: prePending,
-                    migrationReviewReason: preReason,
+                    migrationStatus: 'pending',
+                    rollNumber: '',
                     createdAt: Date.now(),
                     lastReadPosts: 0
                 };
                 await setDoc(doc(usersCollection, credential.user.uid), record, { merge: true });
-                if (preStatus === 'verified') {
-                    try {
-                        await setDoc(doc(userRollsCollection, rollNumber), {
-                            uid: credential.user.uid,
-                            username,
-                            rollNumber,
-                            verifiedAt: serverTimestamp()
-                        }, { merge: false });
-                    } catch (e) {
-                        rollMigrationLog('signup roll claim race', { roll: rollNumber });
-                    }
-                }
                 try { await setDoc(doc(attendanceCollection, credential.user.uid), { attendance: {} }); } catch (e) {}
                 await loginAs(record, credential.user.uid);
             } catch (e) {
@@ -6002,21 +2497,14 @@
 
         async function handleLogin() {
             hideError('loginError');
-            const loginMode = (typeof loginMethod !== 'undefined') ? loginMethod : 'user';
             let username = document.getElementById('loginUsername').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
             if (!username || !password) { showError('loginError', 'Enter your username and password.'); return; }
-            // TWO LOGIN OPTIONS:
-            //   * 'user' mode — normal username login.
-            //   * 'roll' mode — the box holds a 10-digit roll number, resolved to
-            //     the VERIFIED existing account (userRolls/{roll} -> uid + username).
-            // Real sign-in STILL uses that account's normal email/password — no new
-            // credential system, no secrets in the frontend. Username mode also
-            // auto-detects a plain 10-digit roll for backward compatibility.
-            const enteredRoll = ROLL_NUMBER_PATTERN.test(username);
-            const useRollPath = loginMode === 'roll';
-            if (useRollPath && !enteredRoll) { showError('loginError', 'Roll Number mode expects a 10-digit roll number (e.g. 2026011001).'); return; }
-            if (ROLL_MIGRATION_ENABLED && (useRollPath || enteredRoll)) {
+            // Roll-number login alias (Phase 8): if the login box holds a 10-digit roll
+            // number, resolve it to the VERIFIED existing account (userRolls/{roll} ->
+            // uid + username). Real sign-in STILL uses that account's normal
+            // email/password â€” no new credential system, no secrets in the frontend.
+            if (ROLL_MIGRATION_ENABLED && ROLL_NUMBER_PATTERN.test(username)) {
                 try {
                     const rollSnap = await getDoc(doc(userRollsCollection, username));
                     if (rollSnap.exists()) {
@@ -6029,7 +2517,10 @@
                             accountOk = ue.exists();
                         } catch (e) { accountOk = true; }
                         if (accountOk && r.username) {
-                            // Roll login works for any verified mapping (no test-mode gate).
+                            if (!rollMigrationActive({ username: r.username })) {
+                                showError('loginError', 'Roll-number login is not enabled for this account yet. Log in with your username.');
+                                return;
+                            }
                             username = r.username;
                             rollMigrationLog('roll login resolution', { mappedUid: r.uid });
                         } else {
@@ -6132,7 +2623,7 @@
             if (code === 'permission-denied') return 'Firebase saved the account, but Firestore rules blocked the profile.';
             if (code) return (mode === 'signup' ? 'Signup failed: ' : 'Login failed: ') + code;
             return mode === 'signup' ? 'Something went wrong creating your account.' :
-                'Could not log in — please try again.';
+                'Could not log in â€” please try again.';
         }
 
         // ========== LOGIN AS ==========
@@ -6149,7 +2640,7 @@
 
             const branch = getBranch(record.branchId);
             document.getElementById('pillName').textContent = record.name;
-            document.getElementById('pillBranch').textContent = branch.name.replace('B.Tech — ', '') + ' · Sec ' + record
+            document.getElementById('pillBranch').textContent = branch.name.replace('B.Tech â€” ', '') + ' Â· Sec ' + record
                 .section;
             document.getElementById('pillAvatar').textContent = record.name.split(' ').map(w => w[0]).slice(0, 2).join('')
                 .toUpperCase();
@@ -6161,15 +2652,15 @@
             const btn = document.createElement('button');
             if (isAdmin) {
                 btn.className = 'btn-admin';
-                btn.textContent = '⚙️ Admin';
+                btn.textContent = 'âš™ï¸ Admin';
                 btn.onclick = () => openAdminPanel();
             } else if (!adminRequested) {
                 btn.className = 'btn-request-admin';
-                btn.textContent = '👤 Request Admin';
+                btn.textContent = 'ðŸ‘¤ Request Admin';
                 btn.onclick = () => requestAdminRole();
             } else {
                 btn.className = 'btn-request-admin';
-                btn.textContent = '⏳ Request Pending';
+                btn.textContent = 'â³ Request Pending';
                 btn.disabled = true;
                 btn.style.opacity = '0.6';
             }
@@ -6245,7 +2736,7 @@
                         if (change.type === 'modified') {
                             const data = change.doc.data();
                             if (data.adminReply && data.adminReply !== data._prevReply) {
-                                showToast('💬 Your feedback has received a reply.');
+                                showToast('ðŸ’¬ Your feedback has received a reply.');
                             }
                             data._prevReply = data.adminReply;
                         }
@@ -6267,15 +2758,15 @@
                         const b = document.createElement('button');
                         if (isAdmin) {
                             b.className = 'btn-admin';
-                            b.textContent = '⚙️ Admin';
+                            b.textContent = 'âš™ï¸ Admin';
                             b.onclick = () => openAdminPanel();
                         } else if (!adminRequested) {
                             b.className = 'btn-request-admin';
-                            b.textContent = '👤 Request Admin';
+                            b.textContent = 'ðŸ‘¤ Request Admin';
                             b.onclick = () => requestAdminRole();
                         } else {
                             b.className = 'btn-request-admin';
-                            b.textContent = '⏳ Request Pending';
+                            b.textContent = 'â³ Request Pending';
                             b.disabled = true;
                             b.style.opacity = '0.6';
                         }
@@ -6302,18 +2793,18 @@
             initChessClub();
 
             // Initialize push notifications (additive, non-blocking, never prompts
-            // automatically — see PART 4/9). Runs after auth is fully established.
+            // automatically â€” see PART 4/9). Runs after auth is fully established.
             updatePushButtonUI();
             initializePushNotifications().catch(e => console.warn('Push init skipped:', e));
-            // Roll-number migration gate — additive, dismissible, never locks out.
+            // Roll-number migration gate â€” additive, dismissible, never locks out.
             maybeShowMigrationModal();
         }
 
-        // ========== ROLL-NUMBER MIGRATION — CORE (recovery-safe, additive) ==========
+        // ========== ROLL-NUMBER MIGRATION â€” CORE (recovery-safe, additive) ==========
         // SAFETY RULES enforced below:
         //   * roll numbers come ONLY from studentRoster (admin-imported CSV).
         //   * a roll number is linked exactly once (create-only userRolls doc).
-        //   * existing users/{uid} docs are merged (updateDoc) — never replaced.
+        //   * existing users/{uid} docs are merged (updateDoc) â€” never replaced.
         //   * Firebase UIDs, emails, passwords and attendance are untouched.
         //   * gates are dismissible; old username/password login NEVER breaks.
         function rollMigrationActive(user) {
@@ -6326,7 +2817,7 @@
         function rollMigrationLog(...args) {
             if (ROLL_MIGRATION_ENABLED && ROLL_MIGRATION_DEBUG) {
                 try {
-                    // Migration diagnostics ONLY — never passwords, auth tokens,
+                    // Migration diagnostics ONLY â€” never passwords, auth tokens,
                     // FCM tokens, private keys, or service-account credentials.
                     console.debug('[roll-mig]', ...args);
                 } catch (e) { /* ignore */ }
@@ -6343,7 +2834,7 @@
 
         function rollMigrationLabel(status) {
             const map = {
-                pending: 'Pending — roll not linked',
+                pending: 'Pending â€” roll not linked',
                 verified: 'Verified',
                 rejected: 'Rejected',
                 manual_review: 'Manual review'
@@ -6355,10 +2846,10 @@
             const el = document.getElementById('migrationStatus');
             if (!el || !currentUser) return;
             if (currentUser.migrationStatus === 'verified' && currentUser.rollNumber) {
-                el.innerHTML = '<div style="color:var(--moss);font-weight:600;">✓ Roll number verified: <span class="mono">' +
+                el.innerHTML = '<div style="color:var(--moss);font-weight:600;">âœ“ Roll number verified: <span class="mono">' +
                     escapeHtml(currentUser.rollNumber) + '</span></div>';
             } else {
-                const extra = currentUser.migrationReviewReason ? ' — ' + escapeHtml(currentUser.migrationReviewReason) : '';
+                const extra = currentUser.migrationReviewReason ? ' â€” ' + escapeHtml(currentUser.migrationReviewReason) : '';
                 el.innerHTML = '<div style="color:var(--ink-soft);">' + rollMigrationLabel(currentUser.migrationStatus) + extra + '.</div>';
             }
         }
@@ -6391,7 +2882,7 @@
                     if (modal.classList.contains('open')) closeMigrationModal();
                     return;
                 }
-                // Gentle, dismissible prompt — shown once per session, never a lock-out.
+                // Gentle, dismissible prompt â€” shown once per session, never a lock-out.
                 if (!window.__migrationGateShownThisSession) {
                     window.__migrationGateShownThisSession = true;
                     openMigrationModal();
@@ -6430,30 +2921,17 @@
         function evaluateRollClaim(profile, rosterEntry) {
             if (!rosterEntry) return { verdict: 'notfound', reasons: ['not-in-roster'] };
             const reasons = [];
-            const isAdmin = !!(profile && profile.isAdmin);
-            const pName = normalizeUserName(profile ? profile.name : '');
+            const pName = normalizeUserName(profile.name);
             const rName = normalizeUserName(rosterEntry.applicantName || rosterEntry.formalName || '');
-            const nameMismatch = !pName || !rName || pName !== rName;
-            // Admins may self-verify a roster roll even when the profile name does
-            // not exactly match the roster applicantName (e.g. the MMMUT admin
-            // 'tanish' — whose full name is not present in the admission CSV).
-            if (nameMismatch && !isAdmin) reasons.push('name-mismatch');
-            else if (nameMismatch && isAdmin) rollMigrationLog('admin name override', { roll: rosterEntry.rollNumber });
+            if (!pName || !rName || pName !== rName) reasons.push('name-mismatch');
             const branch = String(rosterEntry.branchName ||
                 (rosterEntry.enrollmentNo || '').slice(4, 7) || '').toUpperCase();
             if (branch === 'CED') {
-                // Civil Engineering.
-                if (String(profile ? profile.branchId : '').toLowerCase() !== 'civil') {
-                    if (!isAdmin) reasons.push('branch-mismatch');
-                    else rollMigrationLog('admin branch override', { roll: rosterEntry.rollNumber });
-                }
+                if (String(profile.branchId || '').toLowerCase() !== 'civil') reasons.push('branch-mismatch');
             } else if (branch === 'CSD') {
-                // The app has no 'csd' branch id — CSD rolls map to 'cse' here so
-                // computer-science students are verified instead of being stalled.
-                if (String(profile ? profile.branchId : '').toLowerCase() !== 'cse') {
-                    if (!isAdmin) reasons.push('branch-mismatch');
-                    else rollMigrationLog('admin branch override', { roll: rosterEntry.rollNumber });
-                }
+                // The app has no CSD branchId yet â€” route such claims to manual
+                // review (an admin can still approve them) instead of guessing.
+                reasons.push('csd-unmapped-branch');
             } else {
                 reasons.push('unknown-branch');
             }
@@ -6480,7 +2958,7 @@
                 rosterEntry = snap.exists() ? snap.data() : null;
             } catch (e) { rollMigrationLog('roster read error', e && e.code); }
             if (!rosterEntry) {
-                fail('That roll number was not found in the 2026–27 admission roster. Only published CED/CSD roll numbers can be linked.');
+                fail('That roll number was not found in the 2026â€“27 admission roster. Only published CED/CSD roll numbers can be linked.');
                 rollMigrationLog('roster miss', { roll: raw });
                 return;
             }
@@ -6506,7 +2984,7 @@
                     await setMigrationState('verified', raw, '');
                     closeMigrationModal();
                     renderMigrationStatus();
-                    showToast('✓ Roll number verified: ' + raw);
+                    showToast('âœ“ Roll number verified: ' + raw);
                     return;
                 }
                 fail('This roll number is already linked to a different account. Contact an administrator if you believe this is an error.');
@@ -6531,7 +3009,7 @@
             await setMigrationState('verified', raw, '');
             closeMigrationModal();
             renderMigrationStatus();
-            showToast('✓ Roll number verified: ' + raw);
+            showToast('âœ“ Roll number verified: ' + raw);
             rollMigrationLog('verified', { uid: currentUid, roll: raw });
         }
 
@@ -6604,7 +3082,7 @@
                 adminRequested = true;
                 showToast('Admin request sent! Waiting for approval.');
                 const btn = document.querySelector('.topbar-right .btn-request-admin');
-                if (btn) { btn.textContent = '⏳ Request Pending';
+                if (btn) { btn.textContent = 'â³ Request Pending';
                     btn.disabled = true;
                     btn.style.opacity = '0.6'; }
             } catch (e) {
@@ -6624,7 +3102,7 @@
                 let html = '<div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px;">' +
                     'Students whose roll-number link is pending / in manual review / rejected. Approve only after checking the roster.</div>';
                 if (!needReview.length) {
-                    html += '<div class="empty-note">No pending roll number links. 🎉</div>';
+                    html += '<div class="empty-note">No pending roll number links. ðŸŽ‰</div>';
                 } else {
                     html += '<div style="overflow-x:auto;max-height:520px;overflow-y:auto;">' +
                         '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
@@ -6638,14 +3116,14 @@
                         const roll = u.rollNumber || u.pendingRollNumber || '';
                         const reasons = u.migrationReviewReason ? ' <small style="color:var(--brick);">(' + escapeHtml(u.migrationReviewReason) + ')</small>' : '';
                         const actions = (u.migrationStatus === 'verified')
-                            ? '<span style="color:var(--moss);">✓ verified</span>'
+                            ? '<span style="color:var(--moss);">âœ“ verified</span>'
                             : '<button class="btn-primary" style="margin:0 4px 0 0;padding:5px 10px;font-size:12px;" onclick="adminApproveRoll(\'' + u.id + '\',\'' + escapeHtml(u.username || '') + '\',\'' + roll + '\')">Approve</button>' +
                               '<button class="btn-secondary" style="margin:0 4px 0 0;padding:5px 10px;font-size:12px;" onclick="adminRejectRoll(\'' + u.id + '\',\'' + roll + '\')">Reject</button>' +
                               '<button class="btn-secondary" style="margin:0;padding:5px 10px;font-size:12px;" onclick="adminManualRoll(\'' + u.id + '\')">Review</button>';
                         html += '<tr style="border-bottom:1px solid var(--paper-line);">' +
-                            '<td style="padding:8px;">' + escapeHtml(u.name || '—') + '</td>' +
-                            '<td style="padding:8px;" class="mono">' + escapeHtml(u.username || '—') + '</td>' +
-                            '<td style="padding:8px;" class="mono">' + (roll ? escapeHtml(roll) : '—') + '</td>' +
+                            '<td style="padding:8px;">' + escapeHtml(u.name || 'â€”') + '</td>' +
+                            '<td style="padding:8px;" class="mono">' + escapeHtml(u.username || 'â€”') + '</td>' +
+                            '<td style="padding:8px;" class="mono">' + (roll ? escapeHtml(roll) : 'â€”') + '</td>' +
                             '<td style="padding:8px;">' + rollMigrationLabel(u.migrationStatus) + reasons + '</td>' +
                             '<td style="padding:8px;white-space:nowrap;">' + actions + '</td></tr>';
                     });
@@ -6679,18 +3157,18 @@
             const rSnap = await getDoc(doc(studentRosterCollection, roll)).catch(() => null);
             if (rSnap && rSnap.exists()) {
                 const r = rSnap.data();
-                html += '• Roster: <b>' + escapeHtml(r.formalName || r.applicantName) + '</b> — ' +
+                html += 'â€¢ Roster: <b>' + escapeHtml(r.formalName || r.applicantName) + '</b> â€” ' +
                     escapeHtml(r.enrollmentNo || '') + ' (' + escapeHtml(r.branchName || '?') + ')<br/>';
             } else {
-                html += '• Not present in the import roster.<br/>';
+                html += 'â€¢ Not present in the import roster.<br/>';
             }
             const cSnap = await getDoc(doc(userRollsCollection, roll)).catch(() => null);
             if (cSnap && cSnap.exists()) {
                 const c = cSnap.data();
-                html += '• Claimed by uid <span class="mono">' + escapeHtml(c.uid || '?') + '</span> (' +
+                html += 'â€¢ Claimed by uid <span class="mono">' + escapeHtml(c.uid || '?') + '</span> (' +
                     escapeHtml(c.username || '') + ').<br/>';
             } else {
-                html += '• Not claimed by anyone yet.<br/>';
+                html += 'â€¢ Not claimed by anyone yet.<br/>';
             }
             out.innerHTML = html;
         }
@@ -6698,7 +3176,7 @@
         async function adminApproveRoll(uid, username, roll) {
             roll = normalizeRollInput(roll || '');
             if (!roll) { showToast('No roll number entered for this user yet.'); return; }
-            if (!window.confirm('Approve linking roll ' + roll + ' to this EXISTING account? This only merges fields — it never deletes Firebase users, changes UIDs, emails or passwords.')) return;
+            if (!window.confirm('Approve linking roll ' + roll + ' to this EXISTING account? This only merges fields â€” it never deletes Firebase users, changes UIDs, emails or passwords.')) return;
             const claim = await getDoc(doc(userRollsCollection, roll)).catch(() => null);
             if (claim && claim.exists() && claim.data().uid !== uid) {
                 showToast('Refusing: roll ' + roll + ' is already linked to another uid (' + claim.data().uid + ').');
@@ -6721,7 +3199,7 @@
                     migrationReviewReason: '',
                     rollClaimedAt: serverTimestamp()
                 });
-                showToast('✓ Roll verified for ' + (username || uid));
+                showToast('âœ“ Roll verified for ' + (username || uid));
                 renderAdminRollVerify();
             } catch (e) {
                 showToast('Approval failed: ' + e.message);
@@ -6832,14 +3310,14 @@
                     const branch = getBranch(u.branchId);
                     html += `
                 <tr style="border-bottom:1px solid var(--paper-line);">
-                  <td style="padding:8px;">${u.name || '—'}</td>
-                  <td style="padding:8px;">${u.username || '—'}</td>
+                  <td style="padding:8px;">${u.name || 'â€”'}</td>
+                  <td style="padding:8px;">${u.username || 'â€”'}</td>
                   <td style="padding:8px;">${branch ? branch.name : u.branchId}</td>
-                  <td style="padding:8px;">${u.section || '—'}</td>
+                  <td style="padding:8px;">${u.section || 'â€”'}</td>
                   <td style="padding:8px;">${u.hostel || 'Day Scholar'}</td>
                   <td style="padding:8px;">${u.gender || 'Not specified'}</td>
-                  <td style="padding:8px;">${u.isAdmin ? '✅' : '—'}</td>
-                  <td style="padding:8px;">${u.adminRequested ? '⏳' : '—'}</td>
+                  <td style="padding:8px;">${u.isAdmin ? 'âœ…' : 'â€”'}</td>
+                  <td style="padding:8px;">${u.adminRequested ? 'â³' : 'â€”'}</td>
                 </tr>
               `;
                 });
@@ -6898,14 +3376,14 @@
                 const snap = await getDocs(q);
                 if (!snap.empty) override = { id: snap.docs[0].id, ...snap.docs[0].data() };
             } catch (e) {}
-            const current = override || cell || { code: '—', name: 'Self Study / Library', type: 'Free' };
+            const current = override || cell || { code: 'â€”', name: 'Self Study / Library', type: 'Free' };
             html += `
             <div class="admin-card">
               <div style="font-weight:600;margin-bottom:8px;">Editing: ${ttEditDay}, Period ${ttEditPeriod}</div>
-              <div style="font-size:13px;margin-bottom:12px;">Current: <b>${current.code}</b> — ${current.name} (${current.type})</div>
+              <div style="font-size:13px;margin-bottom:12px;">Current: <b>${current.code}</b> â€” ${current.name} (${current.type})</div>
               <form id="ttEditForm" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" onsubmit="event.preventDefault();saveTimetableOverride();">
                 <div><label style="font-size:11px;font-weight:600;color:var(--ink-soft);">Subject Code</label>
-                  <input id="ttCode" value="${current.code !== '—' ? current.code : ''}" placeholder="e.g. BSM-110"></div>
+                  <input id="ttCode" value="${current.code !== 'â€”' ? current.code : ''}" placeholder="e.g. BSM-110"></div>
                 <div><label style="font-size:11px;font-weight:600;color:var(--ink-soft);">Subject Name</label>
                   <input id="ttName" value="${current.name !== 'Self Study / Library' ? current.name : ''}" placeholder="e.g. Engineering Mathematics I"></div>
                 <div><label style="font-size:11px;font-weight:600;color:var(--ink-soft);">Type</label>
@@ -6937,7 +3415,7 @@
             const section = document.getElementById('ttSection')?.value || ttEditSection;
             const day = document.getElementById('ttDay')?.value || ttEditDay;
             const period = document.getElementById('ttPeriod')?.value || ttEditPeriod;
-            const code = document.getElementById('ttCode').value.trim() || '—';
+            const code = document.getElementById('ttCode').value.trim() || 'â€”';
             const name = document.getElementById('ttName').value.trim() || 'Self Study / Library';
             const type = document.getElementById('ttType').value;
             try {
@@ -7008,7 +3486,7 @@
                         new Date(e.start + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric',
                             month: 'short',
                             year: 'numeric' }) :
-                        `${new Date(e.start+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${new Date(e.end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+                        `${new Date(e.start+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})} â€“ ${new Date(e.end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
                     html += `
                 <div class="admin-card">
                   <div class="row">
@@ -7141,7 +3619,7 @@
                 let html = `
               <div class="admin-form">
                 <div class="full"><label>Title</label><input id="postTitle" placeholder="Announcement title"></div>
-                <div class="full"><label>Content</label><textarea id="postContent" placeholder="Write your announcement…" rows="3"></textarea></div>
+                <div class="full"><label>Content</label><textarea id="postContent" placeholder="Write your announcementâ€¦" rows="3"></textarea></div>
                 <div class="form-actions">
                   <button class="btn-primary" onclick="addPost()">Publish Announcement</button>
                   <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;text-transform:none;">
@@ -7156,11 +3634,11 @@
                 } else {
                     posts.forEach(p => {
                         const date = p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString(
-                            'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                            'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'â€”';
                         html += `
                   <div class="post-item ${p.pinned ? 'pinned' : ''}">
-                    <div class="post-title">${p.title} ${p.pinned ? '📌' : ''}</div>
-                    <div class="post-meta">by ${p.author || 'admin'} · ${date}</div>
+                    <div class="post-title">${p.title} ${p.pinned ? 'ðŸ“Œ' : ''}</div>
+                    <div class="post-meta">by ${p.author || 'admin'} Â· ${date}</div>
                     <div class="post-content">${p.content}</div>
                     <div class="actions" style="margin-top:6px;display:flex;gap:6px;">
                       <button class="btn-sm ${p.pinned ? 'edit' : 'pin'}" onclick="togglePinPost('${p.id}', ${!p.pinned})">${p.pinned ? 'Unpin' : 'Pin'}</button>
@@ -7237,13 +3715,13 @@
                     requests.forEach(r => {
                         const date = r.requestedAt ? new Date(r.requestedAt.seconds * 1000).toLocaleDateString(
                             'en-IN', { day: 'numeric', month: 'short', year: 'numeric',
-                                hour: '2-digit', minute: '2-digit' }) : '—';
+                                hour: '2-digit', minute: '2-digit' }) : 'â€”';
                         html += `
                   <div class="admin-card">
                     <div class="row">
                       <div class="left">
                         <div class="title">${r.name} (@${r.username})</div>
-                        <div class="sub">${r.branchId} · Section ${r.section} · requested ${date}</div>
+                        <div class="sub">${r.branchId} Â· Section ${r.section} Â· requested ${date}</div>
                       </div>
                       <div class="actions">
                         <button class="btn-sm approve" onclick="approveAdminRequest('${r.id}','${r.uid}')">Approve</button>
@@ -7299,11 +3777,11 @@
             let html = '';
             posts.forEach(p => {
                 const date = p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleDateString(
-                    'en-IN', { day: 'numeric', month: 'short' }) : '—';
+                    'en-IN', { day: 'numeric', month: 'short' }) : 'â€”';
                 html += `
               <div class="post-item ${p.pinned ? 'pinned' : ''}" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--paper-line);">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="post-title" style="font-size:13px;font-weight:600;">${p.title} ${p.pinned ? '📌' : ''}</span>
+                  <span class="post-title" style="font-size:13px;font-weight:600;">${p.title} ${p.pinned ? 'ðŸ“Œ' : ''}</span>
                   <span style="font-size:10px;color:var(--ink-soft);">${date}</span>
                 </div>
                 <div class="post-content" style="font-size:12px;margin-top:2px;color:var(--ink-soft);">${p.content}</div>
@@ -7312,7 +3790,7 @@
             });
             if (!viewAll && allPosts.length > 5) {
                 html +=
-                    `<div style="text-align:right;margin-top:8px;"><button class="btn-secondary" style="padding:4px 12px;font-size:11px;margin:0;" onclick="renderPostsFeed(true)">View all ${allPosts.length} →</button></div>`;
+                    `<div style="text-align:right;margin-top:8px;"><button class="btn-secondary" style="padding:4px 12px;font-size:11px;margin:0;" onclick="renderPostsFeed(true)">View all ${allPosts.length} â†’</button></div>`;
             }
             content.innerHTML = html;
         }
@@ -7369,7 +3847,7 @@
             const map = await getAttendanceMap();
             const today = dateKey(new Date());
             if (holidays.has(today)) {
-                showToast('Today is a holiday – attendance cannot be marked.');
+                showToast('Today is a holiday â€“ attendance cannot be marked.');
                 return;
             }
             if (!map[today]) map[today] = {};
@@ -7384,7 +3862,7 @@
         async function markAttendanceForDate(periodKey, subjectCode, status, dateStr) {
             const map = await getAttendanceMap();
             if (holidays.has(dateStr)) {
-                showToast('This date is a holiday – attendance cannot be marked.');
+                showToast('This date is a holiday â€“ attendance cannot be marked.');
                 return;
             }
             if (!map[dateStr]) map[dateStr] = {};
@@ -7422,17 +3900,17 @@
             const todayView = document.getElementById('todayView');
             if (!day || holidays.has(today)) {
                 if (holidays.has(today)) {
-                    todayView.innerHTML = `<div class="holiday-banner">🏖️ Today is a holiday. No classes scheduled.</div>`;
+                    todayView.innerHTML = `<div class="holiday-banner">ðŸ–ï¸ Today is a holiday. No classes scheduled.</div>`;
                 } else {
                     todayView.innerHTML =
-                    `<div class="empty-note">It's the weekend — no scheduled periods today. Enjoy it.</div>`;
+                    `<div class="empty-note">It's the weekend â€” no scheduled periods today. Enjoy it.</div>`;
                 }
             } else {
                 let html = `<div class="rail">`;
                 PERIODS.forEach(p => {
                     if (p.key === 'LUNCH') {
                         html +=
-                            `<div class="rail-item lunch"><div class="rail-dot">·</div><div class="rail-row"><span class="rail-time">Lunch · ${fmtTime(p.start)}–${fmtTime(p.end)}</span></div></div>`;
+                            `<div class="rail-item lunch"><div class="rail-dot">Â·</div><div class="rail-row"><span class="rail-time">Lunch Â· ${fmtTime(p.start)}â€“${fmtTime(p.end)}</span></div></div>`;
                         return;
                     }
                     const cell = schedule[day][p.key];
@@ -7441,19 +3919,19 @@
                     const stateClass = isNow ? 'now' : (isPast ? 'done' : '');
                     const cellKey = p.key + '::' + cell.code;
                     const mark = todayMarks[cellKey];
-                    const isFree = cell.code === '—';
+                    const isFree = cell.code === 'â€”';
                     html += `<div class="rail-item ${stateClass}">
                 <div class="rail-dot">${p.key}</div>
                 <div class="rail-row">
                   <div>
                     <div class="rail-subject">${cell.name}</div>
-                    <div class="rail-meta">${cell.code!=='—'?cell.code+' · ':''}${cell.type} · ${fmtTime(p.start)}–${fmtTime(p.end)}</div>
+                    <div class="rail-meta">${cell.code!=='â€”'?cell.code+' Â· ':''}${cell.type} Â· ${fmtTime(p.start)}â€“${fmtTime(p.end)}</div>
                   </div>
                   ${isFree ? '' : `
                   <div class="rail-actions">
                     ${mark ? `<span class="status-tag ${mark}">${mark}</span>` : ''}
-                    <button class="mini-btn present ${mark==='present'?'active':''}" title="Mark present" onclick="markAttendance('${p.key}','${cell.code}','present')">✓</button>
-                    <button class="mini-btn absent ${mark==='absent'?'active':''}" title="Mark absent" onclick="markAttendance('${p.key}','${cell.code}','absent')">✕</button>
+                    <button class="mini-btn present ${mark==='present'?'active':''}" title="Mark present" onclick="markAttendance('${p.key}','${cell.code}','present')">âœ“</button>
+                    <button class="mini-btn absent ${mark==='absent'?'active':''}" title="Mark absent" onclick="markAttendance('${p.key}','${cell.code}','absent')">âœ•</button>
                   </div>`}
                 </div>
               </div>`;
@@ -7522,14 +4000,14 @@
                 html += `<div class="stat-row">
               <div class="stat-label" title="${s.name}">${s.code}${leaveLine}</div>
               <div class="stat-bar-track"><div class="stat-bar-fill ${barClass}" style="width:${pct===null?0:pct}%;"></div></div>
-              <div class="stat-pct">${pct===null?'—':pct+'%'}</div>
+              <div class="stat-pct">${pct===null?'â€”':pct+'%'}</div>
             </div>`;
             });
             statsEl.innerHTML = html ||
-                `<div class="empty-note">No attendance marked yet — tick classes off as they happen.</div>`;
+                `<div class="empty-note">No attendance marked yet â€” tick classes off as they happen.</div>`;
             const overallTotal = totalP + totalA;
             const overallPct = overallTotal ? Math.round((totalP / overallTotal) * 100) : null;
-            document.getElementById('overallPct').textContent = overallPct === null ? '—' : overallPct + '%';
+            document.getElementById('overallPct').textContent = overallPct === null ? 'â€”' : overallPct + '%';
             document.getElementById('overallCounts').innerHTML = overallTotal ?
                 `<b>${totalP}</b> attended<br><b>${totalA}</b> missed<br>of ${overallTotal} marked (excluding holidays)` :
                 `Nothing marked yet this semester.`;
@@ -7541,8 +4019,8 @@
                 const overallLeave = computeLeaveInfo(totalP, totalA, targetPct);
                 if (overallLeave.type === 'skip') {
                     leaveEl.innerHTML = overallLeave.value > 0 ?
-                        `You're at <b>${overallPct}%</b> overall — you can take <b>${overallLeave.value}</b> more period${overallLeave.value===1?'':'s'} off and stay at or above ${targetPct}%.` :
-                        `You're at <b>${overallPct}%</b>, right at the edge — one more miss will drop you below ${targetPct}%.`;
+                        `You're at <b>${overallPct}%</b> overall â€” you can take <b>${overallLeave.value}</b> more period${overallLeave.value===1?'':'s'} off and stay at or above ${targetPct}%.` :
+                        `You're at <b>${overallPct}%</b>, right at the edge â€” one more miss will drop you below ${targetPct}%.`;
                 } else {
                     leaveEl.innerHTML =
                         `You're at <b>${overallPct}%</b>, below ${targetPct}%. Attend the next <b>${overallLeave.value}</b> period${overallLeave.value===1?'':'s'} in a row (with no misses) to climb back to ${targetPct}%.`;
@@ -7573,7 +4051,7 @@
                 const day = start.getDate();
                 const rangeStr = e.start === e.end ? start.toLocaleDateString('en-IN', { day: 'numeric',
                         month: 'short', year: 'numeric' }) :
-                    `${start.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} – ${new Date(e.end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+                    `${start.toLocaleDateString('en-IN',{day:'numeric',month:'short'})} â€“ ${new Date(e.end+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
                 return `<div class="event-item">
               <div class="event-date"><span class="d">${day}</span>${mon}</div>
               <div>
@@ -7611,8 +4089,8 @@
                     if (lines >= maxLines - 1) {
                         const rest = words.slice(n + 1).join(' ');
                         let last = line.trim();
-                        if (rest) { while (ctx.measureText(last + '…').width > maxWidth && last.length > 0) { last = last
-                                .slice(0, -1); } last += '…'; }
+                        if (rest) { while (ctx.measureText(last + 'â€¦').width > maxWidth && last.length > 0) { last = last
+                                .slice(0, -1); } last += 'â€¦'; }
                         ctx.fillText(last, x, ly);
                         return;
                     }
@@ -7641,10 +4119,10 @@
             ctx.fillRect(0, 0, W, 92);
             ctx.fillStyle = '#E4D2A4';
             ctx.font = '600 11px "IBM Plex Mono", monospace';
-            ctx.fillText('M.M.M. UNIVERSITY OF TECHNOLOGY, GORAKHPUR  ·  SESSION 2026–27', 28, 24);
+            ctx.fillText('M.M.M. UNIVERSITY OF TECHNOLOGY, GORAKHPUR  Â·  SESSION 2026â€“27', 28, 24);
             ctx.fillStyle = '#F1ECDD';
             ctx.font = '600 25px "Fraunces", serif';
-            ctx.fillText(branch.name + ' — Section ' + currentUser.section, 28, 58);
+            ctx.fillText(branch.name + ' â€” Section ' + currentUser.section, 28, 58);
             ctx.font = '400 12px "IBM Plex Mono", monospace';
             ctx.fillStyle = '#CBD6DD';
             ctx.fillText('Room: ' + branch.room, 28, 80);
@@ -7671,7 +4149,7 @@
                     const x = gridLeft + dayColW * ci;
                     const cell = scheduleCache[d][p.key];
                     const isP = cell.type === 'Practical';
-                    const isFree = cell.code === '—';
+                    const isFree = cell.code === 'â€”';
                     ctx.fillStyle = isFree ? '#F1EFE6' : (isP ? '#DCE9E6' : '#EDEAE0');
                     ctx.strokeStyle = '#D9D4C4';
                     ctx.lineWidth = 1;
@@ -7700,7 +4178,7 @@
             ctx.fillStyle = '#8B8676';
             ctx.font = '400 9.5px "IBM Plex Mono", monospace';
             ctx.fillText(
-                'Generated by The Ledger · exact slot placement is approximate, subjects & credit hours are as per curriculum',
+                'Generated by The Ledger Â· exact slot placement is approximate, subjects & credit hours are as per curriculum',
                 28, H - 12);
         }
 
@@ -7749,9 +4227,9 @@
 
             if (isWeekend || !isTeachingDay) {
                 container.innerHTML = `
-              <div class="history-empty">${dayKey} — no classes scheduled.</div>
+              <div class="history-empty">${dayKey} â€” no classes scheduled.</div>
               <div class="history-summary">
-                <span class="hstat"><span class="num" style="color:var(--ink-soft);">—</span> <span class="lbl">no periods</span></span>
+                <span class="hstat"><span class="num" style="color:var(--ink-soft);">â€”</span> <span class="lbl">no periods</span></span>
               </div>
             `;
                 return;
@@ -7759,9 +4237,9 @@
 
             if (isHoliday) {
                 container.innerHTML = `
-              <div class="holiday-banner">🏖️ Holiday — no classes on this day.</div>
+              <div class="holiday-banner">ðŸ–ï¸ Holiday â€” no classes on this day.</div>
               <div class="history-summary">
-                <span class="hstat"><span class="num" style="color:var(--ink-soft);">—</span> <span class="lbl">no attendance</span></span>
+                <span class="hstat"><span class="num" style="color:var(--ink-soft);">â€”</span> <span class="lbl">no attendance</span></span>
               </div>
             `;
                 return;
@@ -7796,7 +4274,7 @@
             PERIODS.forEach(p => {
                 if (p.key === 'LUNCH') {
                     html +=
-                        `<div class="rail-item lunch"><div class="rail-dot">·</div><div class="rail-row"><span class="rail-time">Lunch · ${fmtTime(p.start)}–${fmtTime(p.end)}</span></div></div>`;
+                        `<div class="rail-item lunch"><div class="rail-dot">Â·</div><div class="rail-row"><span class="rail-time">Lunch Â· ${fmtTime(p.start)}â€“${fmtTime(p.end)}</span></div></div>`;
                     return;
                 }
                 const cell = daySchedule[p.key];
@@ -7805,20 +4283,20 @@
                 const mark = dayMarks[cellKey];
                 if (mark === 'present') presentCount++;
                 else if (mark === 'absent') absentCount++;
-                const isFree = cell.code === '—';
+                const isFree = cell.code === 'â€”';
                 const isPast = dateObj < new Date() ? 'done' : '';
                 html += `<div class="rail-item ${isPast}">
               <div class="rail-dot">${p.key}</div>
               <div class="rail-row">
                 <div>
                   <div class="rail-subject">${cell.name}</div>
-                  <div class="rail-meta">${cell.code!=='—'?cell.code+' · ':''}${cell.type} · ${fmtTime(p.start)}–${fmtTime(p.end)}</div>
+                  <div class="rail-meta">${cell.code!=='â€”'?cell.code+' Â· ':''}${cell.type} Â· ${fmtTime(p.start)}â€“${fmtTime(p.end)}</div>
                 </div>
                 ${isFree ? '' : `
                 <div class="rail-actions history-actions">
-                  ${mark ? `<span class="status-tag ${mark}">${mark}</span>` : `<span class="status-tag" style="background:var(--paper);color:var(--ink-soft);">—</span>`}
-                  <button class="mini-btn present ${mark==='present'?'active':''}" title="Mark present" onclick="markAttendanceForDate('${p.key}','${cell.code}','present','${dateStr}')">✓</button>
-                  <button class="mini-btn absent ${mark==='absent'?'active':''}" title="Mark absent" onclick="markAttendanceForDate('${p.key}','${cell.code}','absent','${dateStr}')">✕</button>
+                  ${mark ? `<span class="status-tag ${mark}">${mark}</span>` : `<span class="status-tag" style="background:var(--paper);color:var(--ink-soft);">â€”</span>`}
+                  <button class="mini-btn present ${mark==='present'?'active':''}" title="Mark present" onclick="markAttendanceForDate('${p.key}','${cell.code}','present','${dateStr}')">âœ“</button>
+                  <button class="mini-btn absent ${mark==='absent'?'active':''}" title="Mark absent" onclick="markAttendanceForDate('${p.key}','${cell.code}','absent','${dateStr}')">âœ•</button>
                 </div>`}
               </div>
             </div>`;
@@ -7838,7 +4316,7 @@
             const todayStr = dateKey(new Date());
             if (dateStr > todayStr) {
                 html +=
-                    `<div style="font-size:11px;color:var(--brass);background:var(--brass-soft);padding:6px 12px;border-radius:8px;margin-top:6px;">⏳ This date is in the future — you can still pre-mark attendance if you know your schedule.</div>`;
+                    `<div style="font-size:11px;color:var(--brass);background:var(--brass-soft);padding:6px 12px;border-radius:8px;margin-top:6px;">â³ This date is in the future â€” you can still pre-mark attendance if you know your schedule.</div>`;
             }
 
             container.innerHTML = html;
@@ -7986,7 +4464,7 @@
                 });
                 chessMemberStatus = true;
                 updateChessJoinButtons();
-                showToast('🎉 You joined the Chess Club!');
+                showToast('ðŸŽ‰ You joined the Chess Club!');
                 // Add activity
                 await addDoc(chessActivityCollection, {
                     type: 'join',
@@ -8037,7 +4515,7 @@
                 const timeStr = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
                 nextEl.innerHTML = `
                     <div style="font-weight:600; font-size:15px;">${nextEvent.title}</div>
-                    <div style="font-size:13px; color:var(--ink-soft);">${nextEvent.timeControl || ''} • ${dateStr} ${timeStr}</div>
+                    <div style="font-size:13px; color:var(--ink-soft);">${nextEvent.timeControl || ''} â€¢ ${dateStr} ${timeStr}</div>
                 `;
             } else {
                 nextEl.innerHTML = `<div style="font-size:13px; color:var(--ink-soft);">No upcoming events.</div>`;
@@ -8050,7 +4528,7 @@
             if (top3.length === 0) {
                 preview.innerHTML = `<div class="empty-note">No members yet.</div>`;
             } else {
-                const medals = ['🥇', '🥈', '🥉'];
+                const medals = ['ðŸ¥‡', 'ðŸ¥ˆ', 'ðŸ¥‰'];
                 preview.innerHTML = top3.map((m, i) => `
                     <div class="leaderboard-row">
                         <div class="rank ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${medals[i] || i+1}</div>
@@ -8077,14 +4555,14 @@
             let html = '';
             chessMembers.forEach(m => {
                 const branchName = getBranch(m.branch)?.name || m.branch || '';
-                const shortBranch = branchName.replace('B.Tech — ', '');
+                const shortBranch = branchName.replace('B.Tech â€” ', '');
                 const avatar = (m.name || 'U').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
                 html += `
                     <div class="member-item">
                         <div class="avatar">${avatar}</div>
                         <div class="info">
                             <div class="name">${m.name || 'Unknown'} ${m.uid === currentUid ? ' (you)' : ''}</div>
-                            <div class="branch">${shortBranch}${m.section ? ' · Sec ' + m.section : ''}</div>
+                            <div class="branch">${shortBranch}${m.section ? ' Â· Sec ' + m.section : ''}</div>
                         </div>
                         <div class="rating">${m.rating || 1200}</div>
                     </div>
@@ -8104,7 +4582,7 @@
             let html = '';
             sorted.forEach((m, i) => {
                 const rank = i + 1;
-                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+                const medal = rank === 1 ? 'ðŸ¥‡' : rank === 2 ? 'ðŸ¥ˆ' : rank === 3 ? 'ðŸ¥‰' : rank;
                 const games = (m.wins || 0) + (m.losses || 0) + (m.draws || 0);
                 html += `
                     <div class="leaderboard-row">
@@ -8136,7 +4614,7 @@
                 html += `
                     <div class="event-card">
                         <div class="title">${e.title} ${isPast ? ' (past)' : ''}</div>
-                        <div class="details">${dateStr} ${timeStr} · ${e.timeControl || 'No time control'} · ${participants} participants</div>
+                        <div class="details">${dateStr} ${timeStr} Â· ${e.timeControl || 'No time control'} Â· ${participants} participants</div>
                         <div class="details" style="font-size:12px;">${e.description || ''}</div>
                         <div class="actions">
                             ${!isPast && currentUser ? `<button class="btn-primary" style="margin:0; padding:4px 16px; font-size:12px;" onclick="registerForEvent('${e.id}')">Register</button>` : ''}
@@ -8374,7 +4852,7 @@
                 const resultClass = result === 'win' ? 'win' : result === 'loss' ? 'loss' : 'draw';
                 html += `
                     <div class="game-item">
-                        <div><span class="opponent">${opponent}</span> · ${date}</div>
+                        <div><span class="opponent">${opponent}</span> Â· ${date}</div>
                         <div><span class="result ${resultClass}">${resultText}</span> ${ratingChange !== 0 ? '(' + (ratingChange > 0 ? '+' : '') + ratingChange + ')' : ''}</div>
                     </div>
                 `;
@@ -8394,7 +4872,7 @@
                 const date = a.createdAt ? new Date(a.createdAt.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                 html += `
                     <div style="padding:6px 0; border-bottom:1px solid var(--paper-line); font-size:13px;">
-                        <span style="color:var(--ink-soft);">${date}</span> — ${a.message}
+                        <span style="color:var(--ink-soft);">${date}</span> â€” ${a.message}
                     </div>
                 `;
             });
@@ -8469,7 +4947,7 @@
                     imageUrl = await getDownloadURL(storageRef);
                 } catch (err) {
                     console.warn('Image upload failed, proceeding without image:', err);
-                    showToast('⚠️ Image upload failed, but post will be saved without it.');
+                    showToast('âš ï¸ Image upload failed, but post will be saved without it.');
                 }
             }
 
@@ -8484,7 +4962,7 @@
                     likes: [],
                     createdAt: serverTimestamp()
                 });
-                showToast('✅ Post published!');
+                showToast('âœ… Post published!');
                 closeCreatePost();
             } catch (err) {
                 errorEl.textContent = 'Error publishing post: ' + err.message;
@@ -8511,7 +4989,7 @@
             communityPosts.forEach(post => {
                 const date = post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleString(
                     'en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit',
-                        minute: '2-digit' }) : '—';
+                        minute: '2-digit' }) : 'â€”';
                 const isLiked = post.likes && post.likes.includes(currentUid);
                 const likeCount = post.likes ? post.likes.length : 0;
                 const isOwn = post.uid === currentUid;
@@ -8520,7 +4998,7 @@
               <div class="community-post">
                 <div class="cp-head">
                   <div>
-                    <div class="cp-author">${post.name || 'Unknown'} <span>@${post.username || '—'}</span>
+                    <div class="cp-author">${post.name || 'Unknown'} <span>@${post.username || 'â€”'}</span>
                       <span class="cp-admin-badge">Admin</span>
                     </div>
                     <div class="cp-title">${post.title}</div>
@@ -8531,9 +5009,9 @@
                 ${post.imageUrl ? `<img src="${post.imageUrl}" class="cp-image" alt="Post image" loading="lazy" />` : ''}
                 <div class="cp-actions">
                   <button class="cp-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
-                    ${isLiked ? '❤️' : '🤍'} <span class="cp-like-count">${likeCount}</span>
+                    ${isLiked ? 'â¤ï¸' : 'ðŸ¤'} <span class="cp-like-count">${likeCount}</span>
                   </button>
-                  ${isOwn ? `<button class="cp-delete-btn" onclick="deleteCommunityPost('${post.id}')">🗑️ Delete</button>` : ''}
+                  ${isOwn ? `<button class="cp-delete-btn" onclick="deleteCommunityPost('${post.id}')">ðŸ—‘ï¸ Delete</button>` : ''}
                 </div>
               </div>
             `;
@@ -8693,7 +5171,7 @@
                     adminReplyAt: null,
                     repliedBy: null
                 });
-                showToast('✅ Feedback submitted! Ticket: ' + ticketId);
+                showToast('âœ… Feedback submitted! Ticket: ' + ticketId);
                 closeFeedbackForm();
                 renderFeedbackPreview();
                 if (isAdmin) renderAdminFeedback();
@@ -8729,15 +5207,15 @@
                 } else {
                     const latest = items[0];
                     const statusMap = {
-                        'open': '🟡 Open',
-                        'in_progress': '🔵 In Progress',
-                        'resolved': '🟢 Resolved',
-                        'closed': '⚪ Closed'
+                        'open': 'ðŸŸ¡ Open',
+                        'in_progress': 'ðŸ”µ In Progress',
+                        'resolved': 'ðŸŸ¢ Resolved',
+                        'closed': 'âšª Closed'
                     };
                     const date = latest.createdAt ? new Date(latest.createdAt.seconds * 1000).toLocaleDateString(
-                        'en-IN', { day: 'numeric', month: 'short' }) : '—';
+                        'en-IN', { day: 'numeric', month: 'short' }) : 'â€”';
                     latestEl.innerHTML =
-                        `<strong>${latest.ticketId || '—'}</strong> — ${latest.subject} <span style="color:var(--ink-soft);font-size:11px;">(${statusMap[latest.status] || latest.status} · ${date})</span>`;
+                        `<strong>${latest.ticketId || 'â€”'}</strong> â€” ${latest.subject} <span style="color:var(--ink-soft);font-size:11px;">(${statusMap[latest.status] || latest.status} Â· ${date})</span>`;
                 }
             } catch (e) {}
         }
@@ -8790,7 +5268,7 @@
                         'closed': 'Closed'
                     };
                     const date = f.createdAt ? new Date(f.createdAt.seconds * 1000).toLocaleDateString(
-                        'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                        'en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'â€”';
                     const priorityClass = f.priority === 'high' ? 'fb-priority-high' : f.priority === 'medium' ?
                         'fb-priority-medium' : 'fb-priority-low';
 
@@ -8798,22 +5276,22 @@
                 <div class="feedback-list-item">
                   <div class="fb-head">
                     <div>
-                      <span class="fb-ticket">${f.ticketId || '—'}</span>
+                      <span class="fb-ticket">${f.ticketId || 'â€”'}</span>
                       <span class="fb-subject">${f.subject}</span>
                     </div>
                     <span class="fb-status-badge ${statusMap[f.status] || 'fb-status-open'}">${statusLabel[f.status] || 'Open'}</span>
                   </div>
                   <div class="fb-meta">
                     <span class="${priorityClass}">${f.priority?.toUpperCase() || 'MEDIUM'}</span>
-                    · ${f.category} · ${date}
+                    Â· ${f.category} Â· ${date}
                   </div>
                   <div class="fb-message">${f.message}</div>
-                  ${f.attachment ? `<a href="${f.attachment}" target="_blank" class="fb-attachment-link">📎 View Attachment</a>` : ''}
+                  ${f.attachment ? `<a href="${f.attachment}" target="_blank" class="fb-attachment-link">ðŸ“Ž View Attachment</a>` : ''}
                   ${f.adminReply ? `
                     <div class="fb-reply">
-                      <div class="fb-reply-label">💬 Admin Reply</div>
+                      <div class="fb-reply-label">ðŸ’¬ Admin Reply</div>
                       ${f.adminReply}
-                      <div style="font-size:10px;color:var(--ink-soft);margin-top:4px;">${f.repliedBy ? 'by ' + f.repliedBy : ''} · ${f.adminReplyAt ? new Date(f.adminReplyAt.seconds * 1000).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
+                      <div style="font-size:10px;color:var(--ink-soft);margin-top:4px;">${f.repliedBy ? 'by ' + f.repliedBy : ''} Â· ${f.adminReplyAt ? new Date(f.adminReplyAt.seconds * 1000).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : ''}</div>
                     </div>
                   ` : ''}
                   <div class="fb-actions">
@@ -8895,7 +5373,7 @@
                 if (allDocs.length === 0) {
                     el.innerHTML = `
                 <div class="fb-admin-search">
-                  <input class="search-box" placeholder="Search by name, username, ticket, subject…" value="${adminFeedbackSearch}" oninput="adminFeedbackSearch=this.value;renderAdminFeedback();" />
+                  <input class="search-box" placeholder="Search by name, username, ticket, subjectâ€¦" value="${adminFeedbackSearch}" oninput="adminFeedbackSearch=this.value;renderAdminFeedback();" />
                   <div class="fb-admin-filters">
                     <button class="filter-btn ${adminFeedbackFilter==='all'?'active':''}" onclick="adminFeedbackFilter='all';renderAdminFeedback();">All</button>
                     <button class="filter-btn ${adminFeedbackFilter==='open'?'active':''}" onclick="adminFeedbackFilter='open';renderAdminFeedback();">Open</button>
@@ -8911,7 +5389,7 @@
 
                 let html = `
               <div class="fb-admin-search">
-                <input class="search-box" placeholder="Search by name, username, ticket, subject…" value="${adminFeedbackSearch}" oninput="adminFeedbackSearch=this.value;renderAdminFeedback();" />
+                <input class="search-box" placeholder="Search by name, username, ticket, subjectâ€¦" value="${adminFeedbackSearch}" oninput="adminFeedbackSearch=this.value;renderAdminFeedback();" />
                 <div class="fb-admin-filters">
                   <button class="filter-btn ${adminFeedbackFilter==='all'?'active':''}" onclick="adminFeedbackFilter='all';renderAdminFeedback();">All</button>
                   <button class="filter-btn ${adminFeedbackFilter==='open'?'active':''}" onclick="adminFeedbackFilter='open';renderAdminFeedback();">Open</button>
@@ -8950,20 +5428,20 @@
                         'resolved': 'Resolved',
                         'closed': 'Closed'
                     };
-                    const branchName = getBranch(f.branch)?.name || f.branch || '—';
-                    const shortBranch = branchName.replace('B.Tech — ', '');
+                    const branchName = getBranch(f.branch)?.name || f.branch || 'â€”';
+                    const shortBranch = branchName.replace('B.Tech â€” ', '');
                     const date = f.createdAt ? new Date(f.createdAt.seconds * 1000).toLocaleDateString(
-                        'en-IN', { day: 'numeric', month: 'short' }) : '—';
+                        'en-IN', { day: 'numeric', month: 'short' }) : 'â€”';
 
                     html += `
                 <tr>
-                  <td><span class="fb-ticket" style="font-weight:600;">${f.ticketId || '—'}</span></td>
-                  <td>${f.name || '—'}<br/><span style="font-size:10px;color:var(--ink-soft);">@${f.username || '—'}</span></td>
-                  <td>${shortBranch}<br/><span style="font-size:10px;color:var(--ink-soft);">Sec ${f.section || '—'}</span></td>
-                  <td>${f.category || '—'}</td>
+                  <td><span class="fb-ticket" style="font-weight:600;">${f.ticketId || 'â€”'}</span></td>
+                  <td>${f.name || 'â€”'}<br/><span style="font-size:10px;color:var(--ink-soft);">@${f.username || 'â€”'}</span></td>
+                  <td>${shortBranch}<br/><span style="font-size:10px;color:var(--ink-soft);">Sec ${f.section || 'â€”'}</span></td>
+                  <td>${f.category || 'â€”'}</td>
                   <td><span class="${f.priority === 'high' ? 'fb-priority-high' : f.priority === 'medium' ? 'fb-priority-medium' : 'fb-priority-low'}">${f.priority?.toUpperCase() || 'MED'}</span></td>
                   <td><span class="fb-status-badge ${statusMap[f.status] || 'fb-status-open'}">${statusLabel[f.status] || 'Open'}</span></td>
-                  <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.subject || ''}">${f.subject || '—'}</td>
+                  <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.subject || ''}">${f.subject || 'â€”'}</td>
                   <td>
                     <div class="fb-admin-actions">
                       <button class="btn-sm reply-btn" onclick="openAdminReply('${f.id}')">Reply</button>
@@ -8994,7 +5472,7 @@
                 if (snap.exists()) {
                     const data = snap.data();
                     document.getElementById('replyTicketInfo').textContent =
-                        `Ticket: ${data.ticketId || '—'} — ${data.subject || ''}`;
+                        `Ticket: ${data.ticketId || 'â€”'} â€” ${data.subject || ''}`;
                 }
             }).catch(() => {});
         }
@@ -9018,7 +5496,7 @@
                     status: 'in_progress',
                     updatedAt: serverTimestamp()
                 });
-                showToast('✅ Reply sent!');
+                showToast('âœ… Reply sent!');
                 closeAdminReplyModal();
                 renderAdminFeedback();
                 renderFeedbackPreview();
@@ -9031,7 +5509,7 @@
         // ========== CHANGE STATUS ==========
         async function changeFeedbackStatus(feedbackId) {
             const statuses = ['open', 'in_progress', 'resolved', 'closed'];
-            const labels = ['🟡 Open', '🔵 In Progress', '🟢 Resolved', '⚪ Closed'];
+            const labels = ['ðŸŸ¡ Open', 'ðŸ”µ In Progress', 'ðŸŸ¢ Resolved', 'âšª Closed'];
             const current = await getDoc(doc(feedbackCollection, feedbackId));
             if (!current.exists()) { showToast('Feedback not found.'); return; }
             const curStatus = current.data().status || 'open';
@@ -9102,7 +5580,7 @@
                     document.getElementById('ratingComment').value = existingRating.comment || '';
                     document.getElementById('ratingExisting').style.display = 'block';
                     document.getElementById('ratingExisting').innerHTML =
-                        `⭐ You rated ${existingRating.rating} stars. You can update your rating below.`;
+                        `â­ You rated ${existingRating.rating} stars. You can update your rating below.`;
                     updateRatingStars();
                 } else {
                     existingRating = null;
@@ -9141,7 +5619,7 @@
         async function submitRating() {
             if (!currentUser) { showToast('Please log in first.'); return; }
             if (selectedRating < 1 || selectedRating > 5) {
-                document.getElementById('ratingFormError').textContent = 'Please select a rating (1–5 stars).';
+                document.getElementById('ratingFormError').textContent = 'Please select a rating (1â€“5 stars).';
                 document.getElementById('ratingFormError').style.display = 'block';
                 return;
             }
@@ -9154,7 +5632,7 @@
                         comment: comment,
                         updatedAt: serverTimestamp()
                     });
-                    showToast('⭐ Rating updated!');
+                    showToast('â­ Rating updated!');
                 } else {
                     await addDoc(ratingsCollection, {
                         uid: currentUid,
@@ -9164,7 +5642,7 @@
                         comment: comment,
                         createdAt: serverTimestamp()
                     });
-                    showToast('⭐ Thanks for rating!');
+                    showToast('â­ Thanks for rating!');
                 }
                 closeRatingModal();
                 loadExistingRating();
@@ -9175,7 +5653,7 @@
         }
 
         // ============================================================
-        // ========== LEDGER AI – CHAT IMPLEMENTATION =================
+        // ========== LEDGER AI â€“ CHAT IMPLEMENTATION =================
         // ============================================================
 
         let aiConversationHistory = [];
@@ -9285,9 +5763,9 @@
             sendBtn.disabled = loading;
             input.disabled = loading;
             if (loading) {
-                sendBtn.textContent = '⏳';
+                sendBtn.textContent = 'â³';
             } else {
-                sendBtn.textContent = '➤';
+                sendBtn.textContent = 'âž¤';
             }
         }
 
@@ -9373,7 +5851,7 @@
                                 type: cell.type,
                                 start: p.start,
                                 end: p.end,
-                                isFree: cell.code === '—'
+                                isFree: cell.code === 'â€”'
                             };
                         }
                     });
@@ -9396,7 +5874,7 @@
                                 type: cell.type,
                                 start: p.start,
                                 end: p.end,
-                                isFree: cell.code === '—'
+                                isFree: cell.code === 'â€”'
                             };
                         }
                     });
@@ -9413,7 +5891,7 @@
                                     code: cell.code,
                                     name: cell.name,
                                     type: cell.type,
-                                    isFree: cell.code === '—'
+                                    isFree: cell.code === 'â€”'
                                 };
                             }
                         });
@@ -9502,7 +5980,7 @@
                 prompt += `- By subject:\n`;
                 Object.entries(att.bySubject).forEach(([code, data]) => {
                     const pct = data.pct !== null ? `${data.pct}%` : 'N/A';
-                    prompt += `  - ${code} (${data.name}): ${data.present} present, ${data.absent} absent (${data.total} marked) — ${pct}\n`;
+                    prompt += `  - ${code} (${data.name}): ${data.present} present, ${data.absent} absent (${data.total} marked) â€” ${pct}\n`;
                 });
             } else {
                 prompt += `- No attendance has been marked yet this semester.\n`;
@@ -9523,7 +6001,7 @@
                     if (context.today[p] && !context.today[p].isFree) {
                         hasClasses = true;
                         const s = context.today[p];
-                        prompt += `  Period ${p}: ${s.code} — ${s.name} (${s.type}) ${s.start}-${s.end}\n`;
+                        prompt += `  Period ${p}: ${s.code} â€” ${s.name} (${s.type}) ${s.start}-${s.end}\n`;
                     } else if (context.today[p] && context.today[p].isFree) {
                         prompt += `  Period ${p}: Free / Self Study\n`;
                     }
@@ -9544,7 +6022,7 @@
                     if (context.tomorrow[p] && !context.tomorrow[p].isFree) {
                         hasClasses = true;
                         const s = context.tomorrow[p];
-                        prompt += `  Period ${p}: ${s.code} — ${s.name} (${s.type}) ${s.start}-${s.end}\n`;
+                        prompt += `  Period ${p}: ${s.code} â€” ${s.name} (${s.type}) ${s.start}-${s.end}\n`;
                     } else if (context.tomorrow[p] && context.tomorrow[p].isFree) {
                         prompt += `  Period ${p}: Free / Self Study\n`;
                     }
@@ -9560,7 +6038,7 @@
             if (context.upcomingEvents && context.upcomingEvents.length > 0) {
                 prompt += `UPCOMING EVENTS:\n`;
                 context.upcomingEvents.forEach(e => {
-                    prompt += `- ${e.title} (${e.start} to ${e.end})${e.isOngoing ? ' — ONGOING' : ''}\n`;
+                    prompt += `- ${e.title} (${e.start} to ${e.end})${e.isOngoing ? ' â€” ONGOING' : ''}\n`;
                 });
                 prompt += `\n`;
             }
@@ -9586,7 +6064,7 @@
             return prompt;
         }
 
-        // ===== sendLedgerAIMessage – UPDATED ERROR HANDLING =====
+        // ===== sendLedgerAIMessage â€“ UPDATED ERROR HANDLING =====
         async function sendLedgerAIMessage() {
             const input = document.getElementById('ledgerAiInput');
             const message = input.value.trim();
@@ -9657,7 +6135,7 @@
                         }
                     } catch (modelError) {
                         lastModelError = modelError;
-                        // Detailed diagnostics – never hide the actual Firebase error.
+                        // Detailed diagnostics â€“ never hide the actual Firebase error.
                         console.error("Ledger AI model failed", {
                             model: modelName,
                             code: modelError?.code,
@@ -9665,13 +6143,13 @@
                             error: modelError
                         });
                         const msg = (modelError && modelError.message) ? String(modelError.message) : '';
-                        const isModelUnavailable = /not found|404|does not exist|not supported|models\/|no longer available/i.test(msg);
+                        const isModelUnavailable = /not found|404|does not exist|not supported|models\//i.test(msg);
                         if (!isModelUnavailable) {
-                            // Not a "model unavailable" problem – no point trying
+                            // Not a "model unavailable" problem â€“ no point trying
                             // another model name. Re-throw for the handler below.
                             throw modelError;
                         }
-                        console.warn(`Ledger AI: ${modelName} unavailable, trying next one → ${msg}`);
+                        console.warn(`Ledger AI: ${modelName} unavailable, trying next one â†’ ${msg}`);
                     }
                 }
 
@@ -9706,13 +6184,13 @@
                             'Ledger AI: generateContent received an App Check error.',
                             { code: error?.code || error?.name, message: msg, error }
                         );
-                        errorMsg = 'App Check rejected the request. On GitHub Pages: confirm the reCAPTCHA Enterprise site key for this domain is configured in the Firebase console (App Check). On localhost: register the debug token shown in the browser console (Firebase Console → App Check → Manage debug tokens).';
+                        errorMsg = 'App Check rejected the request. On GitHub Pages: confirm the reCAPTCHA Enterprise site key for this domain is configured in the Firebase console (App Check). On localhost: register the debug token shown in the browser console (Firebase Console â†’ App Check â†’ Manage debug tokens).';
                     } else if (/permission|auth|403|access denied/i.test(msg)) {
                         errorMsg =
                             'I don\'t have permission to access the AI service. Please check the "AI Logic" settings for this web app in the Firebase console and try again.';
                     } else if (/quota|429|rate limit/i.test(msg)) {
                         errorMsg = 'AI service quota exceeded. Please try again later.';
-                    } else if (/not found|404|does not exist|not supported|models\/|no longer available/i.test(msg)) {
+                    } else if (/not found|404|does not exist|not supported|models\//i.test(msg)) {
                         errorMsg = 'The configured AI model is not available for this project. Enable a current Gemini model for the Gemini Developer API on the "AI Logic" page in the Firebase console. See the browser console for the exact model error.';
                     } else if (/blocked|safety|recitation/i.test(msg)) {
                         errorMsg = 'The AI couldn\'t answer that request because it was blocked by safety filters. Please rephrase your question.';
@@ -9727,17 +6205,17 @@
             }
         }
 
-        // ========== BOOT – UPDATED TO HANDLE AI INIT GRACEFULLY ==========
+        // ========== BOOT â€“ UPDATED TO HANDLE AI INIT GRACEFULLY ==========
         async function boot() {
             populateBranchOptions();
             await fetchHolidays();
 
-            // Pre-initialize AI in the background – if it fails, log the error but don't break the app
+            // Pre-initialize AI in the background â€“ if it fails, log the error but don't break the app
             initAI().then(() => {
                 if (aiReady && document.getElementById('aiBadgeDot')) {
                     const dot = document.getElementById('aiBadgeDot');
                     dot.style.display = 'block';
-                    dot.textContent = '✦';
+                    dot.textContent = 'âœ¦';
                     dot.style.fontSize = '10px';
                     dot.style.padding = '2px 4px';
                     dot.style.background = 'var(--teal)';
@@ -9746,13 +6224,13 @@
                     setTimeout(() => { dot.style.display = 'none'; }, 8000);
                 }
             }).catch((err) => {
-                // AI failed to load – log the error, the badge stays hidden
+                // AI failed to load â€“ log the error, the badge stays hidden
                 console.warn('Ledger AI background initialization failed:', err);
                 // Optionally show a subtle indicator that AI is unavailable
                 const dot = document.getElementById('aiBadgeDot');
                 if (dot) {
                     dot.style.display = 'block';
-                    dot.textContent = '⚠';
+                    dot.textContent = 'âš ';
                     dot.style.fontSize = '10px';
                     dot.style.padding = '2px 4px';
                     dot.style.background = 'var(--brick)';
@@ -9860,7 +6338,6 @@
         // Expose globals
         window.populateSectionOptions = populateSectionOptions;
         window.switchAuthTab = switchAuthTab;
-        window.setLoginMethod = setLoginMethod;
         window.handleSignup = handleSignup;
         window.handleLogin = handleLogin;
         window.handleLogout = handleLogout;
@@ -9961,6 +6438,3 @@
         });
 
         boot();
-    </script>
-</body>
-</html>

@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* ============================================================
+   THE LEDGER — global styles
+   Deep dark glass aesthetic. Utility classes live in Tailwind;
+   these base layers add the app-wide scrollbars, selection color,
+   and a subtle radial backdrop glow behind the dashboard.
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Deep dark canvas with a faint violet radial glow at the top. */
+body {
+  background-color: #0b0d14;
+  color: #f1ecdd;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+/* Slim dark scrollbars keep the sidebar / tables from feeling heavy. */
+* {
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* A faint fixed radial glow at the top of the viewport, behind everything. */
+.bg-ledger-glow {
+  background: radial-gradient(
+    ellipse at top,
+    rgba(139, 92, 246, 0.16),
+    transparent 60%
+  );
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
