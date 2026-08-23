@@ -1,7 +1,7 @@
-/** PostCSS config — wires Tailwind CSS and vendor prefixes. */
+/** PostCSS config — wires Tailwind CSS (v3) and vendor prefixes. */
 const config = {
   plugins: {
-    "@tailwindcss/postcss": {},
+    tailwindcss: {},
     autoprefixer: {},
   },
 };

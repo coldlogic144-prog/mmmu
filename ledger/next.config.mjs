@@ -7,9 +7,7 @@ const nextConfig = {
   // Force App Router semantics — client-side nav uses the app/ directory
   // purely. Nothing extra required here, but we keep a stable config file so
   // Tailwind + plugins are picked up consistently.
-  experimental: {
-    typedRoutes: true,
-  },
+      // (typedRoutes left off so plain string hrefs keep working across the app)
   async headers() {
     return [
       {
